@@ -1,0 +1,20 @@
+name: "RepoHeart"
+description: "The autonomous, event-driven, multi-agent heart of your GitHub repository."
+author: "OpenAgentHQ"
+
+branding:
+  icon: "heart"
+  color: "red"
+
+inputs:
+  config:
+    description: "Path to the RepoHeart config file (opencode.yml)."
+    required: false
+    default: "opencode.yml"
+
+runs:
+  using: "docker"
+  image: "docker://ghcr.io/openagentHQ/repoheart:latest"
+  args:
+    - "--config"
+    - "${{ inputs.config }}"
