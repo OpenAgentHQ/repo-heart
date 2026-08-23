@@ -1,0 +1,70 @@
+name: Feature Request
+description: Propose a new agent, provider, capability, or improvement
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, please:
+        - Check [ROADMAP.md](../blob/main/ROADMAP.md) — your feature may already be planned.
+        - Read [CLAUDE.md](../blob/main/CLAUDE.md) — the architecture invariants apply to requested features. Features requiring a database, direct agent writes, or a MERGE action will be declined.
+        - Open a [Discussion](https://github.com/OpenAgentHQ/repoheart/discussions) first for large proposals.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - New agent
+        - New AI provider
+        - Retrieval / context improvement
+        - Safety / idempotency improvement
+        - Developer experience
+        - Configuration / schema
+        - CI / release workflow
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this solve? What repository workflow pain are you feeling?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: >
+        Describe the change. For a new agent: what events does it handle?
+        What does it propose (`ProposedAction` kinds)? What is its risk ceiling?
+    validations:
+      required: true
+
+  - type: textarea
+    id: architecture_fit
+    attributes:
+      label: Architecture Fit
+      description: >
+        How does this fit the non-negotiable rules in CLAUDE.md?
+        (Stateless, no agent writes, Safety Gate, deterministic core, provider-agnostic, bounded work.)
+      placeholder: |
+        - Stateless: yes, because ...
+        - Agent writes nothing directly: yes, because ...
+        - Bounded work: yes, respects ContextBudget by ...
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Other approaches you've thought about.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Related issues, links to examples in other tools, etc.

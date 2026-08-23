@@ -1,0 +1,100 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in RepoHeart
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, please:
+        - Search existing issues for a duplicate.
+        - Check [ROADMAP.md](../blob/main/ROADMAP.md) — the behavior may be intentionally not yet implemented (Phase 0–1).
+        - Reproduce on the latest `main` commit.
+
+  - type: dropdown
+    id: event_type
+    attributes:
+      label: Triggering Event
+      description: Which GitHub event triggered the RepoHeart run?
+      options:
+        - issues.opened
+        - issues.edited
+        - issue_comment.created
+        - pull_request.opened
+        - pull_request.synchronize
+        - pull_request.reopened
+        - pull_request_review.submitted
+        - push
+        - workflow_run.completed
+        - release.published
+        - Other (describe in steps)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this behavior?
+      placeholder: |
+        1. Enable agent X in opencode.yml
+        2. Open an issue with body "..."
+        3. RepoHeart run triggers
+        4. See unexpected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect RepoHeart to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Actions Run Log
+      description: >
+        Paste the relevant structured log output from the RepoHeart Actions run.
+        Every write decision is logged; look for `action=` and `decision=` lines.
+      render: text
+
+  - type: textarea
+    id: config
+    attributes:
+      label: opencode.yml Config
+      description: Paste your config (redact provider API key values).
+      render: yaml
+
+  - type: input
+    id: version
+    attributes:
+      label: RepoHeart Version / Commit
+      description: The git SHA or tag you're running (`uses: OpenAgentHQ/repoheart@<ref>`).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: runner_os
+    attributes:
+      label: Runner OS
+      options:
+        - ubuntu-latest
+        - ubuntu-22.04
+        - ubuntu-20.04
+        - Other
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Anything else that may help — linked PRs/issues, event payloads, etc.

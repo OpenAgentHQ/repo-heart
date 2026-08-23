@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question / Discussion
+    url: https://github.com/OpenAgentHQ/repoheart/discussions
+    about: Ask questions, share ideas, or discuss the architecture before opening an issue.
+  - name: Security Vulnerability
+    url: https://github.com/OpenAgentHQ/repoheart/blob/main/SECURITY.md
+    about: Do not open public issues for security vulnerabilities — see SECURITY.md.

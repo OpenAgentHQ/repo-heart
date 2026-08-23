@@ -1,0 +1,21 @@
+# CODEOWNERS — every PR requires review from at least one owner.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default: all files
+* @OpenAgentHQ/maintainers
+
+# Safety-critical paths — extra scrutiny required
+repoheart/safety/           @OpenAgentHQ/maintainers
+repoheart/agents/base.py    @OpenAgentHQ/maintainers
+tests/test_safety_invariants.py @OpenAgentHQ/maintainers
+
+# Provider implementations — changes affect all downstream agents
+repoheart/providers/        @OpenAgentHQ/maintainers
+
+# CI and release workflows
+.github/workflows/          @OpenAgentHQ/maintainers
+action.yml                  @OpenAgentHQ/maintainers
+Dockerfile                  @OpenAgentHQ/maintainers
+
+# Config schema — changes are a breaking change for users
+opencode.schema.json        @OpenAgentHQ/maintainers
