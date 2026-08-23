@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "repoheart"
+version = "0.0.0"
+description = "The autonomous, event-driven, multi-agent heart of your GitHub repository."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "OpenAgentHQ" }]
+keywords = ["github", "actions", "agents", "automation", "ai", "code-review"]
+
+# Runtime dependencies are intentionally minimal for the MVP. Provider SDKs are
+# optional extras so the core stays provider-agnostic and light.
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "types-PyYAML>=6.0",
+]
+# Provider SDKs live behind extras; none are required for the core to import.
+claude = ["anthropic>=0.34"]
+openai = ["openai>=1.40"]
+
+[project.scripts]
+repoheart = "repoheart.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["repoheart"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
