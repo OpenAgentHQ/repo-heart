@@ -13,14 +13,14 @@ Goal: a repo you can clone, install, and run tests in — even before agents exi
 - ☑ Vision + final system design docs
 - ☑ Workflow template (`repoheart.yml`)
 - ☑ `CLAUDE.md`, `PROJECT.md`, `ROADMAP.md`
-- ☐ Repo skeleton (package layout per design doc)
-- ☐ `pyproject.toml` (deps, ruff, mypy, pytest config)
-- ☐ `action.yml` + `Dockerfile`
-- ☐ `opencode.schema.json` (published config schema)
-- ☐ CI for RepoHeart itself (lint, type-check, test on PR)
-- ☐ `CONTRIBUTING.md`, `LICENSE`
+- ☑ Repo skeleton (package layout per design doc)
+- ☑ `pyproject.toml` (deps, ruff, mypy, pytest config)
+- ☑ `action.yml` + `Dockerfile`
+- ☑ `opencode.schema.json` (published config schema)
+- ☑ CI for RepoHeart itself (lint, type-check, test on PR)
+- ☑ `CONTRIBUTING.md`, `LICENSE`
 
-**Exit criteria:** `pip install -e ".[dev]"`, `pytest`, `ruff`, and `mypy` all run green on an empty skeleton.
+**Exit criteria:** `pip install -e ".[dev]"`, `pytest`, `ruff`, and `mypy` all run green on an empty skeleton. ✅ Verified — all three tools pass on the current skeleton.
 
 ---
 
