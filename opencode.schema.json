@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://openagenthq.dev/repoheart/opencode.schema.json",
+  "title": "RepoHeart Configuration",
+  "description": "Schema for opencode.yml — the single file controlling RepoHeart.",
+  "type": "object",
+  "required": ["repoheart"],
+  "additionalProperties": false,
+  "properties": {
+    "repoheart": {
+      "type": "object",
+      "required": ["provider", "agents"],
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "type": "object",
+          "required": ["name"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "enum": ["opencode", "claude", "openai", "gemini", "local"]
+            },
+            "model": { "type": "string" }
+          }
+        },
+        "providers": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "agents": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "enum": ["opencode", "claude", "openai", "gemini", "local"]
+              }
+            }
+          }
+        },
+        "agents": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "issue_triage": { "type": "boolean" },
+            "duplicate_detection": { "type": "boolean" },
+            "issue_resolution": { "type": "boolean" },
+            "pr_review": { "type": "boolean" },
+            "code_quality": { "type": "boolean" },
+            "security": { "type": "boolean" },
+            "ci_repair": { "type": "boolean" },
+            "conflict_resolution": { "type": "boolean" },
+            "test": { "type": "boolean" },
+            "documentation": { "type": "boolean" }
+          }
+        },
+        "automation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "level": {
+              "type": "string",
+              "enum": ["assist", "auto-safe", "auto"]
+            },
+            "require_human_approval": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["SAFE", "LOW", "MEDIUM", "HIGH"]
+              }
+            }
+          }
+        },
+        "scale": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "checkout": {
+              "type": "string",
+              "enum": ["event-scoped", "full"]
+            },
+            "retrieval": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "semantic": { "type": "boolean" }
+              }
+            },
+            "cache": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "backend": {
+                  "type": "string",
+                  "enum": ["none", "actions", "branch", "vector-store"]
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "max_llm_calls": { "type": "integer", "minimum": 1 },
+                "max_files_read": { "type": "integer", "minimum": 1 },
+                "max_runtime_seconds": { "type": "integer", "minimum": 1 }
+              }
+            }
+          }
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "ci": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "watch_workflows": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "max_fix_attempts": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    }
+  }
+}
