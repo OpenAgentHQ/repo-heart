@@ -24,24 +24,24 @@ Goal: a repo you can clone, install, and run tests in — even before agents exi
 
 ---
 
-## Phase 1 — Deterministic Core ☐
+## Phase 1 — Deterministic Core ☑
 
 Goal: everything that is *not* an LLM. This is the backbone; get it rock-solid before adding agents.
 
-- ☐ `config/` — load + validate `opencode.yml`, resolve provider/agents, fail fast on errors
-- ☐ `events/context.py` — parse `GITHUB_EVENT_PATH`, normalize to `InternalEvent`
-- ☐ `events/types.py` — typed event dataclasses
-- ☐ `events/router.py` — event → candidate-agent lookup table
-- ☐ `idempotency/fingerprint.py` — deterministic event fingerprinting
-- ☐ `idempotency/markers.py` — label / comment-marker / commit-trailer read+write
-- ☐ `safety/policy.py` — risk levels + permission table
-- ☐ `safety/gate.py` — `authorize()` returning ALLOW/ESCALATE/DENY
-- ☐ `observability/logger.py` — structured `key=value` logging
-- ☐ `github_ops/client.py` + `budgeter.py` — API wrapper + rate-limit token bucket
-- ☐ `git_ops/repo.py` — branch/commit/diff/merge-base primitives
-- ☐ `main.py` — wire the pipeline end-to-end (with a no-op agent)
+- ☑ `config/` — load + validate `opencode.yml`, resolve provider/agents, fail fast on errors
+- ☑ `events/context.py` — parse `GITHUB_EVENT_PATH`, normalize to `InternalEvent`
+- ☑ `events/types.py` — typed event dataclasses
+- ☑ `events/router.py` — event → candidate-agent lookup table
+- ☑ `idempotency/fingerprint.py` — deterministic event fingerprinting
+- ☑ `idempotency/markers.py` — label / comment-marker / commit-trailer read+write
+- ☑ `safety/policy.py` — risk levels + permission table
+- ☑ `safety/gate.py` — `authorize()` returning ALLOW/ESCALATE/DENY
+- ☑ `observability/logger.py` — structured `key=value` logging
+- ☑ `github_ops/client.py` + `budgeter.py` — API wrapper + rate-limit token bucket
+- ☑ `git_ops/repo.py` — branch/commit/diff/merge-base primitives
+- ☑ `main.py` — wire the pipeline end-to-end (with a no-op agent)
 
-**Exit criteria:** feed a saved `issues.opened.json`, the pipeline routes, dedups, and exits cleanly — logging every step — without calling any LLM.
+**Exit criteria:** feed a saved `issues.opened.json`, the pipeline routes, dedups, and exits cleanly — logging every step — without calling any LLM. ✅ Verified — 137 tests passing, ruff clean, mypy strict clean, pipeline exits 0 on sample event.
 
 ---
 

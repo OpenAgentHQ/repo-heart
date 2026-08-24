@@ -7,10 +7,56 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [0.1.0] - 2026-08-24
+
+Phase 1 — Deterministic Core. Everything that is not an LLM: the backbone the
+agent system runs on. No LLM is called anywhere in this release.
+
 ### Added
 
-- Phase 1 deterministic core (config loader, event context builder, router,
-  idempotency, Safety Gate, structured logger, GitHub/git ops wrappers, main pipeline)
+- `repoheart/config/schema.py` — typed dataclasses mirroring `opencode.schema.json`
+  (`RepoHeartConfig`, `ProviderConfig`, `AgentsConfig`, `AutomationConfig`, etc.)
+- `repoheart/config/loader.py` — fail-fast YAML loader and validator; raises
+  `ConfigError` before any agent or API call is made
+- `repoheart/events/types.py` — frozen `InternalEvent` dataclass with `routing_key`
+  property; normalizes raw GitHub payloads into a typed value object
+- `repoheart/events/context.py` — `load_event` reads `GITHUB_EVENT_PATH` / `--event`
+  and produces an `InternalEvent`; `infer_event_name` heuristic for local runs
+- `repoheart/events/router.py` — deterministic `ROUTING_TABLE` mapping 13 GitHub
+  event types to ordered agent name lists; `route()` filters by config
+- `repoheart/idempotency/fingerprint.py` — SHA-256 per-agent fingerprinting over
+  `{event}.{action}:{repo}:{entity_id}:{agent}`; no external state required
+- `repoheart/idempotency/markers.py` — reads/writes idempotency fingerprints as
+  hidden HTML comments in GitHub issues/PRs; all writes require `Decision.ALLOW`
+- `repoheart/safety/gate.py` — `SafetyGate.authorize()` enforces hard invariants
+  (DELETE_BRANCH always DENY), `require_human_approval`, and automation-level
+  ceilings (assist/auto-safe/auto); logs every decision
+- `repoheart/github_ops/budgeter.py` — token-bucket `RateLimiter` (5 000 req/hr);
+  syncs from `X-RateLimit-*` response headers
+- `repoheart/github_ops/client.py` — GitHub REST API wrapper using `urllib.request`
+  (zero new deps); write methods require `Decision.ALLOW` or raise `PermissionDenied`
+- `repoheart/git_ops/repo.py` — `GitRepo` class wrapping local `git` via subprocess:
+  merge-base, diff, changed-files, branch creation, commit, rev-parse
+- `repoheart/orchestrator/agent_context.py` — frozen `AgentContext` passed into
+  every agent; contains pre-fetched data only (no live client references)
+- `repoheart/agents/noop.py` — `NoOpAgent` Phase 1 placeholder; returns empty
+  `AgentResult`, no LLM calls
+- `repoheart/agents/registry.py` — `AGENT_REGISTRY` dict mapping all 10 agent
+  names to their implementing class (all `NoOpAgent` in Phase 1)
+- `repoheart/orchestrator/orchestrator.py` — `Orchestrator.run()` sequences the
+  per-agent loop: idempotency check → context build → agent run → ceiling validate
+  → safety gate → execute/escalate/deny; per-agent exception isolation
+- `repoheart/main.py` — full pipeline wiring replaces Phase 0 skeleton:
+  config load → event parse → route → orchestrate → log summary
+
+### Tests
+
+- 13 new test modules, 137 tests total (up from 7); all passing
+- Coverage: config loading, event normalization, routing, fingerprinting, marker
+  parse/write, safety gate decision paths, rate limiter math, GitHub client
+  permission guard, git repo primitives, orchestrator sequencing, CLI happy/error paths
 
 ---
 
