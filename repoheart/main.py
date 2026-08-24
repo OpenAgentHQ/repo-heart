@@ -1,21 +1,28 @@
-"""RepoHeart entrypoint.
+"""RepoHeart entrypoint — Phase 1 full pipeline.
 
-This is the single place the whole pipeline is wired together. In Phase 0 it is
-a skeleton: it parses arguments, loads an event payload, and logs a startup
-line. Subsequent phases fill in config loading, routing, orchestration, and
-agent execution as described in docs/repoheart-final-system-design.md.
+Wires config loading → event parsing → routing → orchestration → safety gate
+into a single, stateless run. No LLM calls are made in Phase 1; the orchestrator
+runs NoOpAgent placeholders for every agent slot.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 from pathlib import Path
 
 from repoheart import __version__
+from repoheart.config.loader import ConfigError, load_config
+from repoheart.events.context import EventLoadError, infer_event_name, load_event
+from repoheart.events.router import route
+from repoheart.git_ops.repo import GitRepo
+from repoheart.github_ops.budgeter import RateLimiter
+from repoheart.github_ops.client import GitHubClient
+from repoheart.idempotency.markers import IdempotencyMarkers
 from repoheart.observability.logger import StructuredLogger
+from repoheart.orchestrator.orchestrator import Orchestrator
+from repoheart.safety.gate import SafetyGate
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -42,6 +49,7 @@ def main(argv: list[str] | None = None) -> int:
         print(__version__)
         return 0
 
+    # 1. Resolve event path
     event_path = args.event or os.environ.get("GITHUB_EVENT_PATH")
     log.log(
         event_msg="startup",
@@ -50,18 +58,91 @@ def main(argv: list[str] | None = None) -> int:
         event_path=event_path or "none",
     )
 
-    if event_path and Path(event_path).is_file():
-        try:
-            payload = json.loads(Path(event_path).read_text(encoding="utf-8"))
-        except json.JSONDecodeError as exc:
-            log.log(event_msg="error", reason="invalid event payload", detail=str(exc))
-            return 1
-        log.log(event_msg="event loaded", keys=",".join(sorted(payload.keys())) or "none")
+    if not event_path:
+        log.log(
+            event_msg="error",
+            reason="no_event_path",
+            detail="Set --event or GITHUB_EVENT_PATH",
+        )
+        return 1
 
-    # Phase 1+ pipeline (config -> context -> idempotency -> route ->
-    # orchestrate -> gate -> execute) is not yet implemented.
-    log.log(event_msg="noop", detail="core pipeline not yet implemented (Phase 0 skeleton)")
-    return 0
+    # 2. Load config — fail fast
+    try:
+        config = load_config(args.config)
+    except ConfigError as exc:
+        log.log(event_msg="error", reason="config_invalid", detail=str(exc))
+        return 1
+
+    log.log(
+        event_msg="config_loaded",
+        provider=config.provider.name,
+        automation_level=config.automation.level,
+    )
+
+    # 3. Load and normalize event
+    event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+    try:
+        if not event_name:
+            import json
+            raw = json.loads(Path(event_path).read_text(encoding="utf-8"))
+            event_name = infer_event_name(raw)
+        event = load_event(event_path, event_name)
+    except (EventLoadError, FileNotFoundError, OSError) as exc:
+        log.log(event_msg="error", reason="event_invalid", detail=str(exc))
+        return 1
+    except Exception as exc:  # json.JSONDecodeError, etc.
+        log.log(event_msg="error", reason="event_invalid", detail=str(exc))
+        return 1
+
+    log.log(
+        event_msg="event_parsed",
+        routing_key=event.routing_key,
+        repo=event.repo_full_name,
+        sender=event.sender_login,
+    )
+
+    # 4. Route event → candidate agents
+    agent_names = route(event, config)
+    if not agent_names:
+        log.log(
+            event_msg="no_agents",
+            routing_key=event.routing_key,
+            reason="unknown_event_or_all_agents_disabled",
+        )
+        return 0
+
+    log.log(event_msg="routed", agents=",".join(agent_names))
+
+    # 5. Wire components
+    token = os.environ.get("GITHUB_TOKEN", "")
+    rate_limiter = RateLimiter()
+    github_client = GitHubClient(token=token, rate_limiter=rate_limiter, logger=log)
+    git_repo = GitRepo()
+    safety_gate = SafetyGate(config=config, logger=log)
+    markers = IdempotencyMarkers(client=github_client, logger=log)
+
+    orchestrator = Orchestrator(
+        config=config,
+        github_client=github_client,
+        git_repo=git_repo,
+        safety_gate=safety_gate,
+        markers=markers,
+        logger=log,
+    )
+
+    # 6. Run
+    summary = orchestrator.run(event, agent_names)
+
+    log.log(
+        event_msg="run_complete",
+        agents_run=",".join(summary.agents_run) or "none",
+        actions_taken=summary.actions_taken,
+        actions_escalated=summary.actions_escalated,
+        actions_denied=summary.actions_denied,
+        errors=len(summary.errors),
+    )
+
+    return 1 if summary.errors else 0
 
 
 if __name__ == "__main__":
