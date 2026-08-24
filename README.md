@@ -2,6 +2,8 @@
 
 # ❤️ RepoHeart
 
+![RepoHeart](assets/social-preview.png)
+
 **The autonomous heart of your GitHub repository.**
 
 A 24/7, event-driven, multi-agent system that watches your repo and automatically activates specialized AI agents to triage issues, review PRs, repair CI, resolve conflicts, and keep the repository healthy — safely, and provider-agnostically.
