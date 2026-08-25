@@ -9,6 +9,68 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.2.0] - 2026-08-25
+
+Phase 2 — Provider Abstraction. Agents can now talk to an AI provider through
+one interface. Swapping providers requires only a config change; no agent code
+changes. No agent produces real LLM output yet (that is Phase 3), but every
+agent receives a live, typed `Provider` in its context.
+
+### Added
+
+- `repoheart/providers/base.py` — `Provider` ABC with `complete()` and
+  `supports_tools()`; frozen dataclasses `CompletionRequest`, `CompletionResponse`,
+  `Message`, `ToolDefinition`, `ToolCall`; full error hierarchy
+  (`ProviderError` → `ProviderTimeoutError`, `ProviderRateLimitError`,
+  `ProviderAuthError`, `ProviderUnavailableError`);
+  `_retry_with_backoff` utility (exponential backoff + full jitter, capped at 60 s)
+- `repoheart/providers/opencode.py` — OpenCode HTTP provider using stdlib
+  `urllib.request` only; no extra install dependency; maps 429/401/403/5xx/timeout
+  to the appropriate `ProviderError` subclass; retries on rate-limit and server errors
+- `repoheart/providers/claude.py` — Anthropic provider with guarded
+  `import anthropic` (raises helpful `ProviderError` when SDK absent); maps
+  `text` and `tool_use` content blocks; maps all Anthropic error types to the
+  shared hierarchy
+- `repoheart/providers/openai.py` — OpenAI provider with guarded `import openai`;
+  prepends `system` role message when `request.system` is non-empty; same error
+  mapping pattern
+- `repoheart/providers/mock.py` — `MockProvider` deterministic test double;
+  keyed canned responses, `default_response`, `call_count`, `raise_on_complete`;
+  never touches the network
+- `repoheart/providers/registry.py` — `build_provider()` factory dispatching on
+  provider name; `resolve_provider()` respects per-agent config overrides and
+  caches instances by `(name, model)` for the process lifetime; `clear_cache()`
+  for test isolation
+- `repoheart/providers/__init__.py` — public re-exports for all types, errors,
+  `MockProvider`, and `CannedResponse`
+
+### Changed
+
+- `repoheart/orchestrator/agent_context.py` — added `provider: Provider | None = None`
+  field (backward-compatible default); uses `TYPE_CHECKING` guard to avoid circular import
+- `repoheart/orchestrator/orchestrator.py` — added `provider_factory: Callable[[str], Provider] | None = None`
+  constructor parameter; `_build_context` calls the factory and passes the
+  result into `AgentContext`
+- `repoheart/main.py` — instantiates a provider factory from config; probes the
+  provider at startup (fail-fast before pipeline runs); passes the factory to
+  `Orchestrator`
+
+### Tests
+
+- 6 new test modules, 205 tests total (up from 137 at Phase 1 exit); all passing
+- `test_providers_base.py` — frozen dataclasses, error hierarchy, retry util
+- `test_providers_mock.py` — key lookup, `call_count`, `raise_on_complete`, determinism
+- `test_providers_registry.py` — factory dispatch, `ConfigError` on unknown name,
+  `ProviderError` on missing SDK, cache identity, per-agent override, end-to-end
+  orchestrator integration with `MockProvider`
+- `test_providers_opencode.py` — HTTP serialization, error mapping, retry-on-429,
+  timeout handling (all via mocked `urlopen`)
+- `test_providers_claude.py` — SDK mapping via `sys.modules` patch, error mapping,
+  missing-SDK path
+- `test_providers_openai.py` — same pattern as Claude
+
+---
+
 ## [0.1.0] - 2026-08-24
 
 Phase 1 — Deterministic Core. Everything that is not an LLM: the backbone the
@@ -103,5 +165,7 @@ This project follows [Semantic Versioning](https://semver.org/):
 
 ## Links
 
-[Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/v0.0.0...HEAD
+[Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.0.0...v0.1.0
 [0.0.0]: https://github.com/OpenAgentHQ/repoheart/releases/tag/v0.0.0

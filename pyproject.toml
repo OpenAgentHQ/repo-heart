@@ -4,12 +4,15 @@ build-backend = "hatchling.build"
 
 [project]
 name = "repoheart"
-version = "0.0.0"
+version = "0.2.0"
 description = "The autonomous, event-driven, multi-agent heart of your GitHub repository."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
-authors = [{ name = "OpenAgentHQ" }]
+authors = [
+    { name = "Himanshu Kumar" },
+    { name = "OpenAgentHQ" },
+]
 keywords = ["github", "actions", "agents", "automation", "ai", "code-review"]
 
 # Runtime dependencies are intentionally minimal for the MVP. Provider SDKs are
