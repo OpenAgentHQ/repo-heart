@@ -1,0 +1,67 @@
+{
+  "ref": "refs/heads/main",
+  "before": "000aaa111bbb222ccc333",
+  "after": "999zzz888yyy777xxx666",
+  "created": false,
+  "deleted": false,
+  "forced": false,
+  "base_ref": null,
+  "compare": "https://github.com/example-org/example-repo/compare/000aaa111bbb...999zzz888yyy",
+  "commits": [
+    {
+      "id": "999zzz888yyy777xxx666",
+      "tree_id": "aaa111bbb222ccc333ddd",
+      "message": "fix: handle missing config file gracefully\n\nRaises ConfigError with a clear message instead of an unhandled FileNotFoundError.",
+      "timestamp": "2026-08-25T12:00:00Z",
+      "author": {
+        "name": "Example Contributor",
+        "email": "contributor@example.com",
+        "username": "example-contributor"
+      },
+      "committer": {
+        "name": "Example Contributor",
+        "email": "contributor@example.com",
+        "username": "example-contributor"
+      },
+      "added": [],
+      "removed": [],
+      "modified": [
+        "repoheart/config/loader.py",
+        "tests/test_config_loader.py"
+      ],
+      "url": "https://github.com/example-org/example-repo/commit/999zzz888yyy777xxx666"
+    }
+  ],
+  "head_commit": {
+    "id": "999zzz888yyy777xxx666",
+    "tree_id": "aaa111bbb222ccc333ddd",
+    "message": "fix: handle missing config file gracefully\n\nRaises ConfigError with a clear message instead of an unhandled FileNotFoundError.",
+    "timestamp": "2026-08-25T12:00:00Z",
+    "author": {
+      "name": "Example Contributor",
+      "email": "contributor@example.com",
+      "username": "example-contributor"
+    },
+    "committer": {
+      "name": "Example Contributor",
+      "email": "contributor@example.com",
+      "username": "example-contributor"
+    },
+    "added": [],
+    "removed": [],
+    "modified": [
+      "repoheart/config/loader.py",
+      "tests/test_config_loader.py"
+    ]
+  },
+  "pusher": {
+    "name": "example-contributor",
+    "email": "contributor@example.com"
+  },
+  "repository": {
+    "full_name": "example-org/example-repo",
+    "default_branch": "main",
+    "private": false
+  },
+  "sender": { "login": "example-contributor" }
+}
