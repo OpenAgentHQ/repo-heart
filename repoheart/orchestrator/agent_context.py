@@ -8,10 +8,13 @@ they need is pre-fetched and placed here by the Orchestrator.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from repoheart.config.schema import RepoHeartConfig
 from repoheart.events.types import InternalEvent
+
+if TYPE_CHECKING:
+    from repoheart.providers.base import Provider
 
 
 @dataclass(frozen=True)
@@ -21,6 +24,9 @@ class AgentContext:
     Fields:
         event: The normalized GitHub event that triggered this agent.
         config: The validated configuration for this repository.
+        provider: The AI provider for this agent's run (set in Phase 2, used
+            in Phase 3). Phase 3 agents should assert ``context.provider is
+            not None`` at the top of ``run()``.
         issue_data: Pre-fetched issue payload for ``issues.*`` events; else None.
         pr_data: Pre-fetched PR payload for ``pull_request.*`` events; else None.
         diff: Unified diff string for PR/push events; empty for others.
@@ -30,6 +36,7 @@ class AgentContext:
 
     event: InternalEvent
     config: RepoHeartConfig
+    provider: Provider | None = None
     issue_data: dict[str, Any] | None = None
     pr_data: dict[str, Any] | None = None
     diff: str = ""

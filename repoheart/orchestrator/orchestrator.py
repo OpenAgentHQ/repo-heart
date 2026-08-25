@@ -7,6 +7,7 @@ one failing agent never aborts the entire run.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -20,6 +21,7 @@ from repoheart.idempotency.fingerprint import fingerprint_for_event
 from repoheart.idempotency.markers import IdempotencyMarkers
 from repoheart.observability.logger import StructuredLogger
 from repoheart.orchestrator.agent_context import AgentContext
+from repoheart.providers.base import Provider
 from repoheart.safety.gate import SafetyGate
 from repoheart.safety.policy import ActionKind, Decision
 
@@ -47,6 +49,7 @@ class Orchestrator:
         safety_gate: SafetyGate,
         markers: IdempotencyMarkers,
         logger: StructuredLogger,
+        provider_factory: Callable[[str], Provider] | None = None,
     ) -> None:
         self._config = config
         self._github = github_client
@@ -54,6 +57,7 @@ class Orchestrator:
         self._gate = safety_gate
         self._markers = markers
         self._logger = logger
+        self._provider_factory = provider_factory
 
     def run(self, event: InternalEvent, agent_names: list[str]) -> RunSummary:
         """Execute the pipeline for a routed event.
@@ -163,10 +167,15 @@ class Orchestrator:
         issue_data: dict[str, Any] | None = None
         pr_data: dict[str, Any] | None = None
 
+        provider: Provider | None = None
+        if self._provider_factory is not None:
+            provider = self._provider_factory(agent_name)
+
         if not self._github._token:
             return AgentContext(
                 event=event,
                 config=self._config,
+                provider=provider,
                 fingerprint=fingerprint,
             )
 
@@ -191,6 +200,7 @@ class Orchestrator:
         return AgentContext(
             event=event,
             config=self._config,
+            provider=provider,
             issue_data=issue_data,
             pr_data=pr_data,
             fingerprint=fingerprint,
