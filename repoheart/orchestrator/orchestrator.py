@@ -166,6 +166,9 @@ class Orchestrator:
         """Pre-fetch data from GitHub and assemble AgentContext."""
         issue_data: dict[str, Any] | None = None
         pr_data: dict[str, Any] | None = None
+        repo_labels: list[dict[str, Any]] = []
+        candidate_issues: list[dict[str, Any]] = []
+        linked_pull_requests: list[dict[str, Any]] = []
 
         provider: Provider | None = None
         if self._provider_factory is not None:
@@ -197,6 +200,33 @@ class Orchestrator:
                     error=str(exc),
                 )
 
+        # Agent-specific pre-fetches
+        try:
+            if agent_name == "issue_triage":
+                repo_labels = self._github.list_labels(event.repo_full_name)
+            elif agent_name == "duplicate_detection" and issue_data is not None:
+                title = str(issue_data.get("title", ""))[:100]
+                current_number = issue_data.get("number")
+                if title:
+                    candidates = self._github.search_issues(
+                        event.repo_full_name, title, max_results=10
+                    )
+                    candidate_issues = [
+                        c for c in candidates if c.get("number") != current_number
+                    ]
+            elif agent_name == "issue_resolution" and issue_data is not None:
+                issue_number = issue_data.get("number")
+                if issue_number is not None:
+                    linked_pull_requests = self._github.get_linked_pull_requests(
+                        event.repo_full_name, int(issue_number)
+                    )
+        except Exception as exc:
+            self._logger.log(
+                event_msg="context_fetch_error",
+                agent=agent_name,
+                error=str(exc),
+            )
+
         return AgentContext(
             event=event,
             config=self._config,
@@ -204,6 +234,9 @@ class Orchestrator:
             issue_data=issue_data,
             pr_data=pr_data,
             fingerprint=fingerprint,
+            repo_labels=repo_labels,
+            candidate_issues=candidate_issues,
+            linked_pull_requests=linked_pull_requests,
         )
 
     def _execute_action(
@@ -252,10 +285,16 @@ class Orchestrator:
             )
             return
 
+        risk_name = action.risk.name if action.risk else "unknown"
         body = (
-            f"**RepoHeart escalation** — `{agent_name}` proposed "
-            f"`{action.kind.value}` (risk: {action.risk.name if action.risk else 'unknown'}) "
-            f"which requires human review.\n\n> {action.reason}"
+            f"<!-- repoheart:escalation -->\n"
+            f"**Action Requires Human Review**\n\n"
+            f"RepoHeart's **{agent_name}** agent proposed an action that exceeds "
+            f"the current automation level (`{self._config.automation.level}`):\n\n"
+            f"- **Action:** `{action.kind.value}`\n"
+            f"- **Risk:** `{risk_name}`\n"
+            f"- **Reason:** {action.reason}\n\n"
+            f"_RepoHeart Safety Gate — Decision: ESCALATE_"
         )
         try:
             from repoheart.safety.policy import Decision as D

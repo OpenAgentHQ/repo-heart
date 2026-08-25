@@ -42,3 +42,6 @@ class AgentContext:
     diff: str = ""
     changed_files: list[str] = field(default_factory=list)
     fingerprint: str = ""
+    repo_labels: list[dict[str, Any]] = field(default_factory=list)
+    candidate_issues: list[dict[str, Any]] = field(default_factory=list)
+    linked_pull_requests: list[dict[str, Any]] = field(default_factory=list)

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -74,6 +75,40 @@ class GitHubClient:
     def list_labels(self, repo: str) -> list[dict[str, Any]]:
         data = self._get(f"/repos/{repo}/labels")
         return data if isinstance(data, list) else []
+
+    def search_issues(
+        self,
+        repo: str,
+        query: str,
+        state: str = "open",
+        max_results: int = 10,
+    ) -> list[dict[str, Any]]:
+        """Search issues in a repo using GitHub's search API."""
+        qs = urllib.parse.urlencode({
+            "q": f"{query} repo:{repo} state:{state}",
+            "per_page": max_results,
+        })
+        data = self._get(f"/search/issues?{qs}")
+        if isinstance(data, dict):
+            items = data.get("items", [])
+            return items if isinstance(items, list) else []
+        return []
+
+    def get_linked_pull_requests(
+        self,
+        repo: str,
+        issue_number: int,
+    ) -> list[dict[str, Any]]:
+        """Search for PRs that reference this issue number."""
+        qs = urllib.parse.urlencode({
+            "q": f"is:pr repo:{repo} #{issue_number}",
+            "per_page": 10,
+        })
+        data = self._get(f"/search/issues?{qs}")
+        if isinstance(data, dict):
+            items = data.get("items", [])
+            return items if isinstance(items, list) else []
+        return []
 
     # ── Write operations (Decision.ALLOW required) ───────────────────────────
 

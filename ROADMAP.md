@@ -63,19 +63,19 @@ Goal: agents can talk to an AI provider through one interface.
 
 ---
 
-## Phase 3 — First Vertical Slice: Issue Intelligence ☐
+## Phase 3 — First Vertical Slice: Issue Intelligence ☑
 
 Goal: one complete, genuinely useful flow, end to end.
 
-- ☐ `agents/base.py` — `Agent` ABC + `AgentResult`, `ProposedAction`, `Finding`
-- ☐ `agents/issue_triage.py` — classify, label, triage summary
-- ☐ `agents/duplicate_detection.py` — GitHub Search candidate set + rerank
-- ☐ `agents/issue_resolution.py` — "already fixed?" via search + pickaxe
-- ☐ Orchestrator sequencing for the issue flow (triage → dedup → resolution)
-- ☐ Escalation comment format (labeled, explains reasoning)
-- ☐ Unit tests per agent (assert proposed actions + risk ceiling, mocked provider)
+- ☑ `agents/base.py` — `Agent` ABC + `AgentResult`, `ProposedAction`, `Finding`
+- ☑ `agents/issue_triage.py` — classify, label, triage summary
+- ☑ `agents/duplicate_detection.py` — GitHub Search candidate set + rerank
+- ☑ `agents/issue_resolution.py` — "already fixed?" via search + pickaxe
+- ☑ Orchestrator sequencing for the issue flow (triage → dedup → resolution)
+- ☑ Escalation comment format (labeled, explains reasoning)
+- ☑ Unit tests per agent (assert proposed actions + risk ceiling, mocked provider)
 
-**Exit criteria:** open a test issue → RepoHeart labels it, flags duplicates, checks resolution, and posts one clean triage summary. Re-running the same event is a no-op (idempotent).
+**Exit criteria:** open a test issue → RepoHeart labels it, flags duplicates, checks resolution, and posts one clean triage summary. Re-running the same event is a no-op (idempotent). ✅ Verified — 234 tests passing, ruff clean, mypy strict clean on 42 source files.
 
 ---
 
