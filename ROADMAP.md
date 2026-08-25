@@ -45,19 +45,21 @@ Goal: everything that is *not* an LLM. This is the backbone; get it rock-solid b
 
 ---
 
-## Phase 2 — Provider Abstraction ☐
+## Phase 2 — Provider Abstraction ☑
 
 Goal: agents can talk to an AI provider through one interface.
 
-- ☐ `providers/base.py` — `Provider` ABC (`complete`, `supports_tools`)
-- ☐ Provider registry + resolution from config (global + per-agent override)
-- ☐ `providers/opencode.py` — first real provider
-- ☐ `providers/claude.py`
-- ☐ `providers/openai.py`
-- ☐ Mock provider for tests (deterministic canned responses)
-- ☐ Retry/backoff + timeout handling at the provider boundary
+- ☑ `providers/base.py` — `Provider` ABC (`complete`, `supports_tools`), `CompletionRequest/Response`, `ToolDefinition/Call`, full error hierarchy
+- ☑ Provider registry + resolution from config (global + per-agent override); process-level instance cache keyed on `(name, model)`
+- ☑ `providers/opencode.py` — stdlib `urllib.request`, zero extra dependency
+- ☑ `providers/claude.py` — guarded `import anthropic`; content-block mapping
+- ☑ `providers/openai.py` — guarded `import openai`; chat-completions mapping
+- ☑ Mock provider for tests (deterministic canned responses, `call_count`, `raise_on_complete`)
+- ☑ Retry/backoff + timeout handling at the provider boundary (exponential backoff with full jitter, capped at 60 s)
+- ☑ `AgentContext.provider` field wired through `Orchestrator` via `provider_factory` callback
+- ☑ Fail-fast provider probe in `main.py` before pipeline starts
 
-**Exit criteria:** the same agent code runs against OpenCode or a mock by changing only config; provider errors escalate cleanly.
+**Exit criteria:** the same agent code runs against OpenCode or a mock by changing only config; provider errors escalate cleanly. ✅ Verified — 205 tests passing, ruff clean, mypy strict clean on all 39 source files.
 
 ---
 
