@@ -1,0 +1,41 @@
+{
+  "action": "opened",
+  "number": 7,
+  "pull_request": {
+    "number": 7,
+    "title": "feat: add graceful error handling for missing config",
+    "body": "Closes #3\n\nThis PR adds a try/except around the config loader.",
+    "state": "open",
+    "draft": false,
+    "head": {
+      "ref": "feat/graceful-config-error",
+      "sha": "abc1234def5678",
+      "repo": {
+        "full_name": "example-org/example-repo"
+      }
+    },
+    "base": {
+      "ref": "main",
+      "sha": "000aaa111bbb222",
+      "repo": {
+        "full_name": "example-org/example-repo"
+      }
+    },
+    "user": { "login": "example-contributor" },
+    "created_at": "2026-08-25T10:00:00Z",
+    "updated_at": "2026-08-25T10:00:00Z",
+    "merged": false,
+    "mergeable": true,
+    "additions": 22,
+    "deletions": 7,
+    "changed_files": 1,
+    "labels": [],
+    "requested_reviewers": []
+  },
+  "repository": {
+    "full_name": "example-org/example-repo",
+    "default_branch": "main",
+    "private": false
+  },
+  "sender": { "login": "example-contributor" }
+}
