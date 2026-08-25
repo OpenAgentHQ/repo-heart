@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 from repoheart import __version__
+from repoheart.agents.registry import AGENT_REGISTRY
 from repoheart.config.loader import ConfigError, load_config
 from repoheart.events.context import EventLoadError, infer_event_name, load_event
 from repoheart.events.router import route
@@ -22,6 +23,8 @@ from repoheart.github_ops.client import GitHubClient
 from repoheart.idempotency.markers import IdempotencyMarkers
 from repoheart.observability.logger import StructuredLogger
 from repoheart.orchestrator.orchestrator import Orchestrator
+from repoheart.providers.base import Provider, ProviderError
+from repoheart.providers.registry import resolve_provider
 from repoheart.safety.gate import SafetyGate
 
 
@@ -79,6 +82,18 @@ def main(argv: list[str] | None = None) -> int:
         automation_level=config.automation.level,
     )
 
+    # 2b. Build provider factory — fail fast if SDK is missing
+    def _provider_factory(agent_name: str) -> Provider:
+        return resolve_provider(config, agent_name)
+
+    probe_agent = next(iter(AGENT_REGISTRY), None)
+    if probe_agent is not None:
+        try:
+            _provider_factory(probe_agent)
+        except ProviderError as exc:
+            log.log(event_msg="error", reason="provider_init_failed", detail=str(exc))
+            return 1
+
     # 3. Load and normalize event
     event_name = os.environ.get("GITHUB_EVENT_NAME", "")
     try:
@@ -128,6 +143,7 @@ def main(argv: list[str] | None = None) -> int:
         safety_gate=safety_gate,
         markers=markers,
         logger=log,
+        provider_factory=_provider_factory,
     )
 
     # 6. Run
