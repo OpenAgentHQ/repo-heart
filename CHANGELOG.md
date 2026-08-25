@@ -9,6 +9,62 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.0] - 2026-08-25
+
+Phase 3 — Issue Intelligence. The first vertical slice: three LLM-driven
+agents that activate on `issues.opened/reopened/edited` and produce real,
+useful output — labels, triage summaries, duplicate links, and resolution
+notices. All actions are `SAFE`-risk and flow through the Safety Gate.
+
+### Added
+
+- `repoheart/agents/issue_triage.py` — `IssueTriageAgent`: sends issue
+  title + body to the LLM with the repo's available label set; parses
+  structured JSON response (`type`, `priority`, `component`, `labels`,
+  `summary`); proposes `ADD_LABEL` for any matching labels and a
+  `POST_COMMENT` triage summary with an HTML idempotency marker
+- `repoheart/agents/duplicate_detection.py` — `DuplicateDetectionAgent`:
+  receives up to 10 candidate issues (pre-fetched by the Orchestrator via
+  GitHub Search) and asks the LLM to rerank for duplicates; high confidence
+  → `ADD_LABEL` (`duplicate`) + `POST_COMMENT`; medium confidence →
+  related-issues comment only
+- `repoheart/agents/issue_resolution.py` — `IssueResolutionAgent`: receives
+  PRs referencing the issue (pre-fetched via GitHub Search); filters to
+  merged only; asks the LLM to confirm resolution; high confidence →
+  `POST_COMMENT` + `ADD_LABEL` (`already-fixed`); medium → comment only
+- `repoheart/github_ops/client.py` — two new read methods:
+  `search_issues(repo, query, state, max_results)` and
+  `get_linked_pull_requests(repo, issue_number)` using `GET /search/issues`
+- `tests/agents/` — 28 new unit tests across three files; all use
+  `MockProvider` (no real LLM calls, no network)
+
+### Changed
+
+- `repoheart/orchestrator/agent_context.py` — three new fields:
+  `repo_labels`, `candidate_issues`, `linked_pull_requests`; all default to
+  empty list for backward compatibility
+- `repoheart/orchestrator/orchestrator.py` — `_build_context()` performs
+  agent-specific pre-fetches (repo labels for triage, search candidates for
+  dedup, linked PRs for resolution); `_post_escalation()` now posts a
+  structured comment including action kind, risk level, and automation level
+- `repoheart/agents/registry.py` — `issue_triage`, `duplicate_detection`,
+  and `issue_resolution` entries replaced from `NoOpAgent` to their real
+  implementations
+
+### Tests
+
+- 28 new tests, 234 tests total (up from 205 at Phase 2 exit); all passing
+- `tests/agents/test_issue_triage.py` — happy path, label filtering,
+  no-label path, idempotency marker, malformed JSON, no provider, no data,
+  ceiling validation, provider call count
+- `tests/agents/test_duplicate_detection.py` — high/medium/no duplicates,
+  empty candidates, idempotency marker, malformed JSON, no provider, ceiling
+- `tests/agents/test_issue_resolution.py` — high/medium confidence, not
+  resolved, no PRs, open PR ignored, idempotency marker, malformed JSON, no
+  provider, ceiling
+
+---
+
 ## [0.2.0] - 2026-08-25
 
 Phase 2 — Provider Abstraction. Agents can now talk to an AI provider through
@@ -165,7 +221,8 @@ This project follows [Semantic Versioning](https://semver.org/):
 
 ## Links
 
-[Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.0.0...v0.1.0
 [0.0.0]: https://github.com/OpenAgentHQ/repoheart/releases/tag/v0.0.0
