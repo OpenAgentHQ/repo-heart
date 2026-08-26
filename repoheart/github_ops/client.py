@@ -125,6 +125,28 @@ class GitHubClient:
         data = self._get(f"/repos/{repo}/pulls/{number}/comments")
         return data if isinstance(data, list) else []
 
+    def get_workflow_run_logs(self, repo: str, run_id: int) -> str:
+        """Fetch the log text for a workflow run (first 50 KB).
+
+        Returns an empty string when the logs are unavailable or the token
+        lacks the ``actions:read`` scope.
+        """
+        try:
+            url = self._base_url + f"/repos/{repo}/actions/runs/{run_id}/logs"
+            self._rate_limiter.acquire()
+            req = urllib.request.Request(url, headers=self._auth_headers())
+            with urllib.request.urlopen(req) as resp:
+                self._sync_rate_limit(dict(resp.headers))
+                raw: bytes = resp.read(50_000)
+                return raw.decode("utf-8", errors="replace")
+        except Exception:
+            return ""
+
+    def get_check_run_details(self, repo: str, check_run_id: int) -> dict[str, Any]:
+        """Return details for a single check run."""
+        result: dict[str, Any] = self._get(f"/repos/{repo}/check-runs/{check_run_id}")
+        return result
+
     # ── Write operations (Decision.ALLOW required) ───────────────────────────
 
     def add_label(

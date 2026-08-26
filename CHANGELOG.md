@@ -9,6 +9,117 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.6.0] - 2026-08-26
+
+Phase 6 — CI Repair & Conflict Resolution. The higher-risk automation tier,
+gated hard behind the Safety Gate. Two new MEDIUM-risk agents replace their
+`NoOpAgent` placeholders: `CIRepairAgent` proposes scoped code fixes for
+failing CI runs (verified locally before committing), and
+`ConflictResolutionAgent` gives semantic explanations of merge conflicts and
+proposes resolutions when confidence is high enough to be safe.
+
+### Added
+
+- `repoheart/git_ops/conflicts.py` — three-way merge inspection helpers:
+  `ConflictBlock` and `ConflictFile` frozen dataclasses; `extract_conflict_blocks`
+  pure parser for `<<<<<<<`/`=======`/`>>>>>>>` markers; `estimate_confidence`
+  heuristic (whitespace-only → 0.95, small blocks → 0.8, medium → 0.6, large
+  → 0.3; threshold for escalation is < 0.7); `read_conflict_files` reads already-
+  marked files from disk; `inspect_conflicts` non-destructive conflict simulation
+  via `git merge-tree` (does not touch the working tree)
+- `repoheart/agents/ci_repair.py` — `CIRepairAgent` (`risk_level = MEDIUM`);
+  reads `ci_logs` from `AgentContext`; respects `config.ci.watch_workflows` filter
+  and `conclusion` field (only acts on `failure`/`timed_out`/`cancelled`);
+  sends log excerpt to LLM asking for root-cause + minimal patches; at confidence
+  ≥ 0.8: proposes `CREATE_BRANCH` (fix branch `repoheart/fix-ci-<run_id>`) →
+  `MODIFY_CODE` × N → `COMMIT` → `PUSH_BRANCH`; at confidence < 0.8: returns
+  `needs_human_review=True` with zero write proposals; `PUSH_BRANCH` payload
+  always has `force=False` — force-push is structurally impossible
+- `repoheart/agents/conflict_resolution.py` — `ConflictResolutionAgent`
+  (`risk_level = MEDIUM`); handles `pull_request.opened`, `.synchronize`, and
+  `push`; reads `conflict_files` from `AgentContext` (pre-inspected by the
+  Orchestrator); for each `ConflictFile` with `resolution_confidence >= 0.7`:
+  sends the `ConflictBlock` pair to the LLM for a per-block resolution;
+  LLM confidence ≥ 0.7 → `ReviewComment` (PR events) or `IssueComment` (push)
+  plus `MODIFY_CODE` proposal; any block below threshold →
+  `needs_human_review=True`, explanation only, no write; falls back to
+  diff-based analysis when no conflict markers are found but `pr_data.mergeable`
+  is `False`
+- `repoheart/github_ops/client.py` — `get_workflow_run_logs(repo, run_id)`
+  fetches up to 50 KB of CI log text from `GET /repos/{repo}/actions/runs/{id}/logs`;
+  `get_check_run_details(repo, check_run_id)` wraps `GET /repos/{repo}/check-runs/{id}`;
+  both are read-only (no `Decision` token required)
+
+### Changed
+
+- `repoheart/orchestrator/agent_context.py` — three new Phase 6 fields:
+  `ci_logs: str`, `workflow_run_data: dict | None`, `conflict_files: list[ConflictFile]`;
+  all default to empty / `None` for full backward compatibility
+- `repoheart/orchestrator/orchestrator.py` — `_build_context()` pre-fetches
+  workflow run data + CI logs for `ci_repair`; calls `inspect_conflicts` for
+  `conflict_resolution` on PR events; `_execute_action()` gains Phase 6 handlers:
+  `CREATE_BRANCH` (delegates to `GitRepo.create_branch`), `MODIFY_CODE` (patch-
+  or full-replace file on disk), `COMMIT` (calls `_run_local_tests` gate first —
+  skips the commit and logs `commit_skipped` if tests fail), `PUSH_BRANCH`
+  (refuses `force=True` structurally); `_run_local_tests()` private helper runs
+  `pytest` on changed `.py` paths before any commit is dispatched
+- `repoheart/orchestrator/pr_flow.py` — `"conflict_resolution"` added to
+  `_SECTION_TITLES` so its `ReviewComment` objects appear in the consolidated PR
+  review under a **Conflict Resolution** section
+- `repoheart/orchestrator/issue_flow.py` — idempotency markers added:
+  `"ci_repair" → "<!-- repoheart:ci-repair -->"` and
+  `"conflict_resolution" → "<!-- repoheart:conflict-resolution -->"`
+- `repoheart/agents/registry.py` — `"ci_repair"` and `"conflict_resolution"`
+  entries replaced from `NoOpAgent` to their real implementations
+- `repoheart/events/router.py` — `pull_request.synchronize` now also routes to
+  `conflict_resolution` (a new push to a PR branch can introduce fresh conflicts)
+- `_PR_AGENT_NAMES` in `orchestrator.py` extended to include `conflict_resolution`
+  so its `ReviewComment` objects flow into the consolidated PR review
+
+### Safety tests
+
+- `tests/test_git_ops_conflicts.py` — 17 tests: conflict-marker parsing (basic,
+  multiple, no markers, context capture, whitespace-only), confidence heuristics
+  (trivial → ≥ 0.9, small → ≥ 0.7, large → < 0.7), file reading with markers
+- `tests/agents/test_ci_repair.py` — 15 tests including:
+  `test_no_force_push` (PUSH_BRANCH payload never has `force=True`),
+  `test_no_delete_branch_proposed` (DELETE_BRANCH must never appear),
+  `test_low_confidence_escalates` (zero write proposals when confidence < 0.8),
+  `test_ceiling_not_violated` (`validate_ceiling()` passes on all paths),
+  `test_empty_logs_returns_finding`, `test_watch_workflows_filter`,
+  `test_non_failure_conclusion`
+- `tests/agents/test_conflict_resolution.py` — 17 tests including:
+  `test_low_confidence_escalates` (large blocks → `needs_human_review=True`, no
+  MODIFY_CODE), `test_low_confidence_file_level_escalates` (file already deemed
+  low-confidence → no LLM call), `test_pr_event_uses_review_comments`,
+  `test_push_event_uses_issue_comments`, `test_ceiling_not_violated`,
+  `test_no_provider_returns_finding`, `test_clean_pr_returns_early`
+
+### Tests
+
+- 49 new tests, 482 tests total (up from 433 at Phase 5 exit); all passing
+- ruff clean, mypy strict clean on 61 source files
+
+---
+
+## [0.5.0] - 2026-08-26
+
+Phase 5 — Large-Repo Scaling. Budget-bounded retrieval, sparse checkout, and
+optional embeddings so RepoHeart runs within time and cost limits on repos the
+size of LangChain or opencode without timing out. See git history for full
+details.
+
+---
+
+## [0.4.0] - 2026-08-25
+
+Phase 4 — PR Intelligence + Unified Agent Output Architecture. Four PR agents
+(`pr_review`, `code_quality`, `security`, `test`) producing a single consolidated
+review comment; `ReviewComment`/`IssueComment` typed output replacing raw
+`POST_COMMENT` proposals for all agents. See git history for full details.
+
+---
+
 ## [0.3.0] - 2026-08-25
 
 Phase 3 — Issue Intelligence. The first vertical slice: three LLM-driven
@@ -221,7 +332,10 @@ This project follows [Semantic Versioning](https://semver.org/):
 
 ## Links
 
-[Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.0.0...v0.1.0

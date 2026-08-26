@@ -14,6 +14,7 @@ from repoheart.config.schema import RepoHeartConfig
 from repoheart.events.types import InternalEvent
 
 if TYPE_CHECKING:
+    from repoheart.git_ops.conflicts import ConflictFile
     from repoheart.providers.base import Provider
     from repoheart.retrieval.layer import RetrievalContext
 
@@ -52,3 +53,7 @@ class AgentContext:
     test_mapping: dict[str, list[str]] = field(default_factory=dict)
     # Phase 5 — Large-Repo Scaling (populated when retrieval_layer is configured)
     retrieval_context: RetrievalContext | None = None
+    # Phase 6 — CI Repair & Conflict Resolution
+    ci_logs: str = ""
+    workflow_run_data: dict[str, Any] | None = None
+    conflict_files: list[ConflictFile] = field(default_factory=list)

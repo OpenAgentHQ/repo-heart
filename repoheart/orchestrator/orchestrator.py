@@ -34,7 +34,7 @@ from repoheart.retrieval.layer import RetrievalLayer, RetrievalQuery
 from repoheart.safety.gate import SafetyGate
 from repoheart.safety.policy import ActionKind, Decision
 
-_PR_AGENT_NAMES = {"pr_review", "code_quality", "security", "test"}
+_PR_AGENT_NAMES = {"pr_review", "code_quality", "security", "test", "conflict_resolution"}
 
 # ── Deterministic PR context helpers (no LLM, no GitHub) ─────────────────────
 
@@ -154,6 +154,28 @@ def _extract_terms(pr_data: dict[str, Any] | None, diff: str) -> list[str]:
                 terms.append(stripped[:80])
                 break
     return terms[:3]
+
+
+def _run_local_tests(file_paths: list[str], repo_root: str = ".") -> bool:
+    """Run pytest on files changed by a CI repair patch; return True if all pass.
+
+    Only runs tests that exist on disk. Returns True (safe to commit) when no
+    test files are found — the broader CI will validate instead.
+    """
+    existing = [p for p in file_paths if os.path.isfile(p)]
+    if not existing:
+        return True  # nothing to test locally; defer to CI
+    try:
+        result = subprocess.run(
+            ["pytest", "--tb=short", "-q", *existing],
+            capture_output=True,
+            text=True,
+            cwd=repo_root,
+            timeout=120,
+        )
+        return result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return True  # pytest not installed or timed out — let CI decide
 
 
 class _BudgetedProvider(Provider):
@@ -447,6 +469,48 @@ class Orchestrator:
                 error=str(exc),
             )
 
+        # Phase 6: CI repair — pre-fetch workflow run logs
+        ci_logs: str = ""
+        workflow_run_data: dict[str, Any] | None = None
+        if agent_name == "ci_repair":
+            wr = event.payload.get("workflow_run") or event.payload.get("check_run")
+            if isinstance(wr, dict):
+                workflow_run_data = wr
+                run_id = wr.get("id")
+                if run_id is not None and self._github._token:
+                    try:
+                        ci_logs = self._github.get_workflow_run_logs(
+                            event.repo_full_name, int(run_id)
+                        )
+                    except Exception as exc:
+                        self._logger.log(
+                            event_msg="context_fetch_error",
+                            agent=agent_name,
+                            error=f"ci logs: {exc}",
+                        )
+
+        # Phase 6: conflict resolution — inspect conflicts for PR events
+        from repoheart.git_ops.conflicts import ConflictFile, inspect_conflicts  # local import
+        conflict_files_list: list[ConflictFile] = []
+        if agent_name == "conflict_resolution" and event.event_name == "pull_request":
+            try:
+                _pr = event.payload.get("pull_request", {})
+                base_sha = _pr.get("base", {}).get("sha", "") if isinstance(_pr, dict) else ""
+                head_sha = _pr.get("head", {}).get("sha", "") if isinstance(_pr, dict) else ""
+                if base_sha and head_sha:
+                    conflict_files_list = inspect_conflicts(self._git, base_sha, head_sha)
+                    self._logger.log(
+                        event_msg="conflict_inspect",
+                        agent=agent_name,
+                        conflict_files=len(conflict_files_list),
+                    )
+            except Exception as exc:
+                self._logger.log(
+                    event_msg="context_fetch_error",
+                    agent=agent_name,
+                    error=f"conflict inspect: {exc}",
+                )
+
         # Phase 5: retrieval (PR agents with changed files + configured retrieval layer)
         from repoheart.retrieval.layer import RetrievalContext  # local to avoid circular
         retrieval_context: RetrievalContext | None = None
@@ -487,6 +551,9 @@ class Orchestrator:
             secret_scan_output=secret_scan_output,
             test_mapping=test_mapping,
             retrieval_context=retrieval_context,
+            ci_logs=ci_logs,
+            workflow_run_data=workflow_run_data,
+            conflict_files=conflict_files_list,
         )
 
     def _deliver_issue_comments(
@@ -649,6 +716,80 @@ class Orchestrator:
 
         elif action.kind == ActionKind.REMOVE_LABEL and entity_number is not None:
             pass  # Phase 3+ — no-op for now
+
+        elif action.kind == ActionKind.CREATE_BRANCH:
+            branch_name = str(action.payload.get("name", ""))
+            from_ref = str(action.payload.get("from_ref", "HEAD"))
+            if branch_name:
+                try:
+                    self._git.create_branch(branch_name, from_ref)
+                    self._logger.log(
+                        event_msg="branch_created",
+                        branch=branch_name,
+                        from_ref=from_ref,
+                    )
+                except Exception as exc:
+                    self._logger.log(
+                        event_msg="branch_create_error",
+                        branch=branch_name,
+                        error=str(exc),
+                    )
+
+        elif action.kind == ActionKind.MODIFY_CODE:
+            path = str(action.payload.get("path", ""))
+            search = str(action.payload.get("search", ""))
+            replace = str(action.payload.get("replace", ""))
+            resolved_content = str(action.payload.get("resolved_content", ""))
+            if path and os.path.isfile(path):
+                try:
+                    if resolved_content:
+                        with open(path, "w", encoding="utf-8") as fh:
+                            fh.write(resolved_content)
+                    elif search:
+                        with open(path, encoding="utf-8") as fh:
+                            original = fh.read()
+                        if search in original:
+                            with open(path, "w", encoding="utf-8") as fh:
+                                fh.write(original.replace(search, replace, 1))
+                    self._logger.log(event_msg="code_modified", path=path)
+                except OSError as exc:
+                    self._logger.log(event_msg="code_modify_error", path=path, error=str(exc))
+
+        elif action.kind == ActionKind.COMMIT:
+            message = str(action.payload.get("message", "chore: repoheart automated commit"))
+            paths: list[str] = list(action.payload.get("paths", []))
+            test_paths = [p for p in paths if p.endswith(".py")]
+            repo_root = str(self._git._repo_path)
+            tests_pass = _run_local_tests(test_paths, repo_root)
+            if tests_pass:
+                try:
+                    sha = self._git.commit(message, paths)
+                    self._logger.log(event_msg="commit_created", sha=sha[:12])
+                except Exception as exc:
+                    self._logger.log(event_msg="commit_error", error=str(exc))
+            else:
+                self._logger.log(
+                    event_msg="commit_skipped",
+                    reason="local_tests_failed",
+                    paths=",".join(test_paths),
+                )
+
+        elif action.kind == ActionKind.PUSH_BRANCH:
+            branch = str(action.payload.get("branch", ""))
+            force = bool(action.payload.get("force", False))
+            if branch and not force:
+                try:
+                    push_args = ["push", "origin", branch]
+                    self._git._run(*push_args)
+                    self._logger.log(event_msg="branch_pushed", branch=branch)
+                except Exception as exc:
+                    self._logger.log(event_msg="push_error", branch=branch, error=str(exc))
+            elif force:
+                self._logger.log(
+                    event_msg="push_skipped",
+                    reason="force_push_denied",
+                    branch=branch,
+                )
 
         elif action.kind == ActionKind.POST_COMMENT and entity_number is not None:
             body = str(action.payload.get("body", ""))

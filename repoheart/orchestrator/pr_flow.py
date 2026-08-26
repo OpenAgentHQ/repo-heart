@@ -18,6 +18,7 @@ _SECTION_TITLES: dict[str, str] = {
     "code_quality": "Code Quality",
     "security": "Security",
     "test": "Test Coverage",
+    "conflict_resolution": "Conflict Resolution",
 }
 
 _SEVERITY_ICONS: dict[str, str] = {

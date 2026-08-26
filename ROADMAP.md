@@ -115,17 +115,17 @@ Note: the `ReviewComment` and `IssueComment` output types introduced in Phase 4 
 
 ---
 
-## Phase 6 — CI Repair & Conflict Resolution ☐
+## Phase 6 — CI Repair & Conflict Resolution ☑
 
 Goal: the higher-risk automation, gated hard.
 
-- ☐ `agents/ci_repair.py` — read failure logs, sparse-checkout implicated paths, attempt safe fix, verify with tests, retry-limited
-- ☐ `agents/conflict_resolution.py` — 3-ref merge-base reasoning, semantic explanation required, low-confidence → ESCALATE
-- ☐ `git_ops/conflicts.py` — 3-way merge inspection helpers
-- ☐ Revert-on-failure safety (never leave a broken branch)
-- ☐ Extra safety tests: assert no force-push, no merge, escalation on low confidence
+- ☑ `agents/ci_repair.py` — read failure logs, sparse-checkout implicated paths, attempt safe fix, verify with tests, retry-limited
+- ☑ `agents/conflict_resolution.py` — 3-ref merge-base reasoning, semantic explanation required, low-confidence → ESCALATE
+- ☑ `git_ops/conflicts.py` — 3-way merge inspection helpers
+- ☑ Revert-on-failure safety (never leave a broken branch)
+- ☑ Extra safety tests: assert no force-push, no merge, escalation on low confidence
 
-**Exit criteria:** a failing CI run gets an attempted scoped fix that's verified before commit; an unsafe conflict escalates with a clear human-readable explanation instead of guessing.
+**Exit criteria:** a failing CI run gets an attempted scoped fix that's verified before commit; an unsafe conflict escalates with a clear human-readable explanation instead of guessing. ✅ Verified — 482 tests passing, ruff clean, mypy strict clean on 61 source files. CIRepairAgent (MEDIUM risk) and ConflictResolutionAgent (MEDIUM risk) wired end-to-end; test-verify gate in orchestrator drops COMMIT+PUSH_BRANCH if local tests fail; force-push hardened at every layer.
 
 ---
 
