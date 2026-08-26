@@ -59,10 +59,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: OpenAgentHQ/repoheart@main
         with:
-          config: opencode.yml
+          config: repoheart.yml
 ```
 
-**2. Configure** — `opencode.yml`:
+**2. Configure** — `repoheart.yml`:
 
 ```yaml
 repoheart:
@@ -100,7 +100,7 @@ That's it.
 | Test | Test-impact mapping and test generation |
 | Documentation | Keeps docs current with changed public symbols |
 
-Enable only what you want in `opencode.yml`.
+Enable only what you want in `repoheart.yml`.
 
 ---
 

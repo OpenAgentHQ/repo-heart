@@ -39,7 +39,7 @@ example repo + docs are updated for a sub-10-minute onboarding experience.
 - `repoheart/config/loader.py` — explicit `_load_agents()` now maps each boolean
   field directly (typed, no `**kwargs`); reads optional `documentation_config`
   YAML block into `DocumentationAgentConfig`
-- `opencode.schema.json` — `documentation_config` object added under `agents`:
+- `repoheart.schema.json` — `documentation_config` object added under `agents`:
   `changelog_on_release` (boolean, default `true`) and `docstring_style` (enum)
 - `examples/release.published.json` — sample `release.published` payload used by
   the integration smoke-test parametrization
@@ -71,7 +71,7 @@ example repo + docs are updated for a sub-10-minute onboarding experience.
 
 - `repoheart/agents/registry.py` — `"documentation"` entry updated from
   `NoOpAgent` to `DocumentationAgent`; `NoOpAgent` import removed (now unused)
-- `opencode.yml` — `documentation: true` (enabled in the reference config so the
+- `repoheart.yml` — `documentation: true` (enabled in the reference config so the
   smoke-test `release.published` payload routes to an active agent); new
   `documentation_config` commented block documents available options
 - `docs/configuration.md` — `agents.documentation` description updated to
@@ -323,7 +323,7 @@ agent system runs on. No LLM is called anywhere in this release.
 
 ### Added
 
-- `repoheart/config/schema.py` — typed dataclasses mirroring `opencode.schema.json`
+- `repoheart/config/schema.py` — typed dataclasses mirroring `repoheart.schema.json`
   (`RepoHeartConfig`, `ProviderConfig`, `AgentsConfig`, `AutomationConfig`, etc.)
 - `repoheart/config/loader.py` — fail-fast YAML loader and validator; raises
   `ConfigError` before any agent or API call is made
@@ -385,8 +385,8 @@ Initial project skeleton. All Phase 0 exit criteria are verified green.
 - `pyproject.toml` — hatchling build, ruff/mypy/pytest config, provider extras
   (`claude`, `openai`)
 - `action.yml` + `Dockerfile` — GitHub Action entry point
-- `opencode.schema.json` — published config schema for `opencode.yml`
-- `opencode.yml` — reference configuration template
+- `repoheart.schema.json` — published config schema for `repoheart.yml`
+- `repoheart.yml` — reference configuration template
 - `tests/test_safety_invariants.py` — guardrail tests for no-MERGE,
   no-force-push, risk-level ordering, ceiling enforcement, and
   downgrade prevention
@@ -403,7 +403,7 @@ Initial project skeleton. All Phase 0 exit criteria are verified green.
 
 This project follows [Semantic Versioning](https://semver.org/):
 
-- **MAJOR** — breaking changes to the `opencode.yml` config schema or the
+- **MAJOR** — breaking changes to the `repoheart.yml` config schema or the
   `Agent` / `Provider` ABCs
 - **MINOR** — new agents, providers, or backward-compatible features
 - **PATCH** — bug fixes and safe improvements

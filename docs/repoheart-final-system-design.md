@@ -14,7 +14,7 @@ Deployment model: **GitHub Actions–native, stateless per run, no mandatory ext
 RepoHeart runs **inside the user's GitHub Actions workflow**. The user provides only:
 
 1. One workflow file (`.github/workflows/repoheart.yml`)
-2. One config file (`opencode.yml`)
+2. One config file (`repoheart.yml`)
 3. Provider/model credentials (as Actions secrets)
 
 No hosted RepoHeart server, no Redis, no PostgreSQL, no external infrastructure is required for the MVP. GitHub itself is the source of truth and the compute environment.
@@ -28,7 +28,7 @@ No hosted RepoHeart server, no Redis, no PostgreSQL, no external infrastructure 
 │              User GitHub Repository          │
 │                                              │
 │  .github/workflows/repoheart.yml             │
-│  opencode.yml                                │
+│  repoheart.yml                               │
 │                                              │
 │       ┌──────────────────────────────┐       │
 │       │       GitHub Actions         │       │
@@ -86,7 +86,7 @@ RepoHeart Runtime  (all business logic below this line)
 | Component | Responsibility |
 |---|---|
 | Event Context Builder | Normalize raw GitHub payload → typed `InternalEvent` |
-| Config Loader | Load + validate `opencode.yml`, resolve providers/agents |
+| Config Loader | Load + validate `repoheart.yml`, resolve providers/agents |
 | Idempotency Markers | GitHub-native dedup (labels, comment markers, commit trailers) |
 | Event Router | Deterministic event-type → candidate-agent lookup |
 | Orchestrator | Sequence agents, enforce context budgets + per-run ceilings |
@@ -106,7 +106,7 @@ RepoHeart Runtime  (all business logic below this line)
 1. GitHub fires event
 2. Runner starts → EVENT-SCOPED checkout (sparse/shallow, not full clone)
 3. Event Context Builder → InternalEvent
-4. Config Loader → validate opencode.yml, resolve provider + enabled agents
+4. Config Loader → validate repoheart.yml, resolve provider + enabled agents
 5. Idempotency check → fingerprint match? → exit fast if already processed
 6. Event Router → candidate agents (pure lookup, no LLM)
 7. Orchestrator, per eligible agent:
@@ -417,7 +417,7 @@ The **Actions run log is the observability system** (MVP). Structured single-lin
 repoheart/
 ├── action.yml
 ├── Dockerfile
-├── opencode.schema.json
+├── repoheart.schema.json
 │
 ├── repoheart/
 │   ├── main.py                      # entrypoint: wires everything
@@ -444,7 +444,7 @@ repoheart/
 
 ---
 
-## Part IX — Config Surface (`opencode.yml`)
+## Part IX — Config Surface (`repoheart.yml`)
 
 ```yaml
 repoheart:
@@ -494,7 +494,7 @@ repoheart:
 
 ### 25. MVP (this spec)
 
-GitHub event handling · routing · issue triage · duplicate detection · resolution detection · labeling · PR review · code-quality · CI failure analysis · safe conflict resolution · Git safety · provider abstraction · idempotency · `opencode.yml` · human escalation · **large-repo retrieval + event-scoped checkout**.
+GitHub event handling · routing · issue triage · duplicate detection · resolution detection · labeling · PR review · code-quality · CI failure analysis · safe conflict resolution · Git safety · provider abstraction · idempotency · `repoheart.yml` · human escalation · **large-repo retrieval + event-scoped checkout**.
 
 ### 26. Future Scope
 

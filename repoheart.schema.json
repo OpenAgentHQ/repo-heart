@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://openagenthq.dev/repoheart/opencode.schema.json",
+  "$id": "https://openagenthq.dev/repoheart/repoheart.schema.json",
   "title": "RepoHeart Configuration",
-  "description": "Schema for opencode.yml — the single file controlling RepoHeart.",
+  "description": "Schema for repoheart.yml — the single file controlling RepoHeart.",
   "type": "object",
   "required": ["repoheart"],
   "additionalProperties": false,
@@ -19,7 +19,7 @@
           "properties": {
             "name": {
               "type": "string",
-              "enum": ["opencode", "claude", "openai", "gemini", "local"]
+              "enum": ["opencode", "claude", "openai", "openrouter", "gemini", "local"]
             },
             "model": { "type": "string" }
           }

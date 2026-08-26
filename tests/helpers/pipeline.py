@@ -13,7 +13,7 @@ from repoheart.main import main
 _CLEAN_ENV = {"GITHUB_TOKEN": "", "GITHUB_EVENT_NAME": "", "GITHUB_EVENT_PATH": ""}
 
 
-def run_pipeline(event_path: str | Path, config_path: str = "opencode.yml") -> tuple[int, str]:
+def run_pipeline(event_path: str | Path, config_path: str = "repoheart.yml") -> tuple[int, str]:
     """Run the full local pipeline and return its exit code and stdout."""
     buf = StringIO()
     with (

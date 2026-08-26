@@ -21,7 +21,7 @@ Start here before opening an issue:
 ### GitHub Discussions
 
 Use [GitHub Discussions](https://github.com/OpenAgentHQ/repoheart/discussions) for:
-- Questions about configuration (`opencode.yml`, agent setup)
+- Questions about configuration (`repoheart.yml`, agent setup)
 - Questions about how RepoHeart works
 - Ideas and proposals before filing a feature request
 - General conversation about the project
@@ -47,7 +47,7 @@ Before filing a bug report:
 When filing, use the Bug Report template and include:
 - The GitHub event type that triggered the run (e.g., `issues.opened`)
 - The relevant section of the Actions run log (structured `key=value` output)
-- Your `opencode.yml` config (redact provider API keys)
+- Your `repoheart.yml` config (redact provider API keys)
 - Expected vs. actual behavior
 
 ## Requesting Features
@@ -73,7 +73,7 @@ hosted server, no database, no external infrastructure required.
 
 **Q: Which AI providers are supported?**  
 A: OpenCode, Claude (Anthropic), and OpenAI are supported config-only (switching
-providers is a one-line change in `opencode.yml`). The provider interface is
+providers is a one-line change in `repoheart.yml`). The provider interface is
 designed so adding new providers is straightforward.
 
 **Q: Is RepoHeart production-ready?**  

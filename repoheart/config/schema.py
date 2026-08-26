@@ -1,4 +1,4 @@
-"""Typed dataclasses mirroring opencode.schema.json.
+"""Typed dataclasses mirroring repoheart.schema.json.
 
 These are pure value objects — no file I/O, no imports from safety/ to avoid
 circular dependencies. ``require_human_approval`` stores risk level names as

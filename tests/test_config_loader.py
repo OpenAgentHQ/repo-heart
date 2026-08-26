@@ -11,7 +11,7 @@ from repoheart.config.loader import ConfigError, load_config
 
 
 def _write_config(tmp_path: Path, content: str) -> Path:
-    p = tmp_path / "opencode.yml"
+    p = tmp_path / "repoheart.yml"
     p.write_text(textwrap.dedent(content), encoding="utf-8")
     return p
 
@@ -23,9 +23,9 @@ _MINIMAL_VALID = """
 """
 
 
-def test_loads_project_opencode_yml() -> None:
-    """The real opencode.yml in the project root must parse without error."""
-    config = load_config("opencode.yml")
+def test_loads_project_repoheart_yml() -> None:
+    """The real repoheart.yml in the project root must parse without error."""
+    config = load_config("repoheart.yml")
     assert config.provider.name == "opencode"
 
 
@@ -38,7 +38,7 @@ def test_loads_minimal_valid_config(tmp_path: Path) -> None:
 
 def test_missing_file_raises_config_error() -> None:
     with pytest.raises(ConfigError, match="not found"):
-        load_config("/nonexistent/path/opencode.yml")
+        load_config("/nonexistent/path/repoheart.yml")
 
 
 def test_missing_repoheart_key_raises(tmp_path: Path) -> None:
@@ -93,7 +93,7 @@ def test_invalid_risk_level_in_require_human_raises(tmp_path: Path) -> None:
 
 
 def test_invalid_yaml_raises(tmp_path: Path) -> None:
-    p = tmp_path / "opencode.yml"
+    p = tmp_path / "repoheart.yml"
     p.write_text("repoheart: {unclosed: [", encoding="utf-8")
     with pytest.raises(ConfigError):
         load_config(p)

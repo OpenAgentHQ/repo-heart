@@ -58,7 +58,7 @@ Every `ProposedAction` carries a `risk`. The Safety Gate authorizes per-action, 
 
 ```text
 repoheart/
-├── config/         opencode.yml schema + loader
+├── config/         repoheart.yml schema + loader
 ├── events/         context builder, event types, router
 ├── orchestrator/   sequencing, agent context, budgets
 ├── agents/         one file per agent (base.py = ABC)
@@ -116,7 +116,7 @@ Both may still propose `ADD_LABEL`.
 2. Implement `run(context) -> AgentResult`. No direct writes. Use `ReviewComment` for PR agents, `IssueComment` for issue agents. Use `Finding` only for errors. Never propose `POST_COMMENT`.
 3. Register the agent's event types in `events/router.py`.
 4. Add to `AGENT_REGISTRY` in `agents/registry.py`.
-5. Add config toggle in the `opencode.yml` schema + `opencode.schema.json`.
+5. Add config toggle in the `repoheart.yml` schema + `repoheart.schema.json`.
 6. Add a unit test asserting typed output (`review_comments` or `issue_comments`) + risk ceiling.
 7. Update the routing table + roster in the final design doc.
 
@@ -155,5 +155,5 @@ ruff check . && mypy repoheart
 pytest
 
 # run locally against a saved event payload
-python -m repoheart.main --event examples/issues.opened.json --config opencode.yml
+python -m repoheart.main --event examples/issues.opened.json --config repoheart.yml
 ```

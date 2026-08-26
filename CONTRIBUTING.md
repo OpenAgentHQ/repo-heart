@@ -28,7 +28,7 @@ pytest
 Run locally against a saved event payload (no live GitHub needed):
 
 ```bash
-python -m repoheart.main --event examples/issues.opened.json --config opencode.yml
+python -m repoheart.main --event examples/issues.opened.json --config repoheart.yml
 ```
 
 ---
@@ -80,7 +80,7 @@ If a task seems to require breaking one of these, open an issue to discuss the a
 1. Subclass `Agent` in `repoheart/agents/<name>.py` — set `name`, `risk_level`, `handles_events`.
 2. Implement `run(context) -> AgentResult`; no direct writes.
 3. Register event types in `events/router.py`.
-4. Add a config toggle to the schema + `opencode.schema.json`.
+4. Add a config toggle to the schema + `repoheart.schema.json`.
 5. Add tests (proposed actions + risk ceiling).
 6. Update the roster + routing table in the design doc.
 

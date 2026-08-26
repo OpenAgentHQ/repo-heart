@@ -44,8 +44,8 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--config",
-        default="opencode.yml",
-        help="Path to the opencode.yml config file.",
+        default="repoheart.yml",
+        help="Path to the repoheart.yml config file.",
     )
     parser.add_argument("--version", action="store_true", help="Print version and exit.")
     return parser.parse_args(argv)

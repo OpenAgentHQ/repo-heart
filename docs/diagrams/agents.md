@@ -219,6 +219,6 @@ flowchart TD
    - Never propose `POST_COMMENT` with a pre-formatted body.
 3. Register the agent's event types in `events/router.py`.
 4. Add to `AGENT_REGISTRY` in `agents/registry.py`.
-5. Add config toggle in `opencode.yml` schema + `opencode.schema.json`.
+5. Add config toggle in `repoheart.yml` schema + `repoheart.schema.json`.
 6. Add a unit test asserting `review_comments` or `issue_comments` + risk ceiling.
 7. Update the registry table above.

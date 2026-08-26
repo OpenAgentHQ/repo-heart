@@ -44,7 +44,7 @@ body:
       label: Steps to Reproduce
       description: How can we reproduce this behavior?
       placeholder: |
-        1. Enable agent X in opencode.yml
+        1. Enable agent X in repoheart.yml
         2. Open an issue with body "..."
         3. RepoHeart run triggers
         4. See unexpected behavior
@@ -71,7 +71,7 @@ body:
   - type: textarea
     id: config
     attributes:
-      label: opencode.yml Config
+      label: repoheart.yml Config
       description: Paste your config (redact provider API key values).
       render: yaml
 

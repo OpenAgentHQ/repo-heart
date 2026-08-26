@@ -26,13 +26,13 @@ def test_version_exits_zero() -> None:
 
 def test_no_event_exits_one() -> None:
     with patch.dict("os.environ", _CLEAN_ENV, clear=False):
-        code, _ = _run("--config", "opencode.yml")
+        code, _ = _run("--config", "repoheart.yml")
     assert code == 1
 
 
 def test_missing_event_file_exits_one() -> None:
     with patch.dict("os.environ", _CLEAN_ENV, clear=False):
-        code, _ = _run("--event", "/nonexistent/event.json", "--config", "opencode.yml")
+        code, _ = _run("--event", "/nonexistent/event.json", "--config", "repoheart.yml")
     assert code == 1
 
 
@@ -40,7 +40,7 @@ def test_missing_config_exits_one() -> None:
     with patch.dict("os.environ", _CLEAN_ENV, clear=False):
         code, _ = _run(
             "--event", "examples/issues.opened.json",
-            "--config", "/nonexistent/opencode.yml",
+            "--config", "/nonexistent/repoheart.yml",
         )
     assert code == 1
 
@@ -50,7 +50,7 @@ def test_full_pipeline_exits_zero() -> None:
     with patch.dict("os.environ", _CLEAN_ENV, clear=False):
         code, out = _run(
             "--event", "examples/issues.opened.json",
-            "--config", "opencode.yml",
+            "--config", "repoheart.yml",
         )
     assert code == 0, f"Expected exit 0, got {code}\nOutput:\n{out}"
     assert "event_msg=run_complete" in out
@@ -58,25 +58,25 @@ def test_full_pipeline_exits_zero() -> None:
 
 def test_full_pipeline_logs_startup() -> None:
     with patch.dict("os.environ", _CLEAN_ENV, clear=False):
-        _, out = _run("--event", "examples/issues.opened.json", "--config", "opencode.yml")
+        _, out = _run("--event", "examples/issues.opened.json", "--config", "repoheart.yml")
     assert "event_msg=startup" in out
 
 
 def test_full_pipeline_logs_event_parsed() -> None:
     with patch.dict("os.environ", _CLEAN_ENV, clear=False):
-        _, out = _run("--event", "examples/issues.opened.json", "--config", "opencode.yml")
+        _, out = _run("--event", "examples/issues.opened.json", "--config", "repoheart.yml")
     assert "event_msg=event_parsed" in out
     assert "routing_key=issues.opened" in out
 
 
 def test_full_pipeline_logs_routed() -> None:
     with patch.dict("os.environ", _CLEAN_ENV, clear=False):
-        _, out = _run("--event", "examples/issues.opened.json", "--config", "opencode.yml")
+        _, out = _run("--event", "examples/issues.opened.json", "--config", "repoheart.yml")
     assert "event_msg=routed" in out
     assert "issue_triage" in out
 
 
 def test_full_pipeline_zero_errors() -> None:
     with patch.dict("os.environ", _CLEAN_ENV, clear=False):
-        _, out = _run("--event", "examples/issues.opened.json", "--config", "opencode.yml")
+        _, out = _run("--event", "examples/issues.opened.json", "--config", "repoheart.yml")
     assert "errors=0" in out

@@ -63,10 +63,10 @@ jobs:
       - name: Run RepoHeart
         uses: OpenAgentHQ/repoheart@main
         with:
-          config: opencode.yml
+          config: repoheart.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Provider credentials — only the ones referenced in opencode.yml
+          # Provider credentials — only the ones referenced in repoheart.yml
           # need to actually be set; unused secrets simply resolve empty.
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -76,9 +76,9 @@ jobs:
 
 You don't need every trigger above — trim the `on:` block to the events you actually want RepoHeart reacting to. But note `pull_request` alone won't cover CI Repair; that agent relies on `workflow_run` events completing after your CI workflow finishes.
 
-## 2. Copy and fill in `opencode.yml`
+## 2. Copy and fill in `repoheart.yml`
 
-Create `opencode.yml` in your repository root:
+Create `repoheart.yml` in your repository root:
 
 ```yaml
 repoheart:
@@ -118,7 +118,7 @@ For a first run, leave `automation.level` at `assist`. RepoHeart will comment an
 
 Go to **Settings → Secrets and variables → Actions → New repository secret**, and add the key that matches your chosen provider:
 
-| `provider.name` in `opencode.yml` | Secret to add       |
+| `provider.name` in `repoheart.yml` | Secret to add       |
 | ---------------------------------- | -------------------- |
 | `opencode`                         | `OPENCODE_API_KEY`   |
 | `claude`                           | `ANTHROPIC_API_KEY`  |
@@ -130,7 +130,7 @@ You only need to set the secret for the provider you're actually using; the work
 
 ## 4. (Optional) Enable the documentation agent
 
-To get docstring suggestions on PRs and changelog drafts on releases, add to your `opencode.yml`:
+To get docstring suggestions on PRs and changelog drafts on releases, add to your `repoheart.yml`:
 
 ```yaml
 repoheart:
@@ -162,7 +162,7 @@ Work through these in order:
 2. **Check if the run failed.** Open the run and look at the `Run RepoHeart` step logs. A failure here is almost always a missing or invalid provider secret — confirm the secret name matches exactly what `provider.name` expects (table above) and that the key is valid.
 3. **Check labels.** Some agents skip events based on labels RepoHeart itself manages (e.g. it won't re-triage an issue already labeled `repoheart:triaged`). If you're testing repeatedly on the same issue, remove RepoHeart's labels before re-triggering, or open a fresh issue.
 4. **Check `permissions:`.** If the run succeeds but nothing shows up on GitHub (no comment, no label), the job likely lacks `issues: write` or `pull-requests: write` in the workflow's `permissions:` block.
-5. **Check the agent is enabled.** Confirm the relevant agent is `true` under `agents:` in `opencode.yml` — disabled agents never run, and RepoHeart won't log an error for a deliberately skipped agent.
+5. **Check the agent is enabled.** Confirm the relevant agent is `true` under `agents:` in `repoheart.yml` — disabled agents never run, and RepoHeart won't log an error for a deliberately skipped agent.
 6. **Check `automation.level`.** With `level: assist`, RepoHeart proposes and comments but never modifies code — if you were expecting an auto-applied fix, this is expected behavior, not a bug. See `docs/safety.md`.
 
 If none of that explains it, the run logs (Actions tab → the failed/completed run → `Run RepoHeart` step) are the next place to look; RepoHeart logs which agents it evaluated for the event and why each did or didn't act.
