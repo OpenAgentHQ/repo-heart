@@ -15,6 +15,7 @@ from repoheart.events.types import InternalEvent
 
 if TYPE_CHECKING:
     from repoheart.providers.base import Provider
+    from repoheart.retrieval.layer import RetrievalContext
 
 
 @dataclass(frozen=True)
@@ -49,3 +50,5 @@ class AgentContext:
     linter_output: str = ""
     secret_scan_output: str = ""
     test_mapping: dict[str, list[str]] = field(default_factory=dict)
+    # Phase 5 — Large-Repo Scaling (populated when retrieval_layer is configured)
+    retrieval_context: RetrievalContext | None = None

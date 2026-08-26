@@ -31,6 +31,9 @@ dev = [
 # Provider SDKs live behind extras; none are required for the core to import.
 claude = ["anthropic>=0.34"]
 openai = ["openai>=1.40"]
+# Phase 5: large-repo scaling (guarded imports — optional)
+scale = ["tree-sitter>=0.21", "tree-sitter-python>=0.21"]
+scale-semantic = ["numpy>=1.26"]
 
 [project.scripts]
 repoheart = "repoheart.main:main"

@@ -14,6 +14,7 @@ from pathlib import Path
 
 from repoheart import __version__
 from repoheart.agents.registry import AGENT_REGISTRY
+from repoheart.cache import make_cache
 from repoheart.config.loader import ConfigError, load_config
 from repoheart.events.context import EventLoadError, infer_event_name, load_event
 from repoheart.events.router import route
@@ -25,6 +26,12 @@ from repoheart.observability.logger import StructuredLogger
 from repoheart.orchestrator.orchestrator import Orchestrator
 from repoheart.providers.base import Provider, ProviderError
 from repoheart.providers.registry import resolve_provider
+from repoheart.repo_access.reader import RepoReader
+from repoheart.retrieval.chunking import FileChunker
+from repoheart.retrieval.layer import RetrievalLayer
+from repoheart.retrieval.lexical import LexicalRetriever
+from repoheart.retrieval.semantic import SemanticRetriever
+from repoheart.retrieval.structural import StructuralRetriever
 from repoheart.safety.gate import SafetyGate
 
 
@@ -136,6 +143,18 @@ def main(argv: list[str] | None = None) -> int:
     safety_gate = SafetyGate(config=config, logger=log)
     markers = IdempotencyMarkers(client=github_client, logger=log)
 
+    # Phase 5: cache + retrieval layer
+    repo_root = os.environ.get("GITHUB_WORKSPACE", ".")
+    cache = make_cache(config.scale.cache_backend, git_repo)
+    reader = RepoReader(repo_root)
+    retrieval_layer = RetrievalLayer(
+        reader=reader,
+        structural=StructuralRetriever(cache),
+        lexical=LexicalRetriever(repo_root, github_client),
+        chunker=FileChunker(),
+        semantic=SemanticRetriever(cache) if config.scale.semantic else None,
+    )
+
     orchestrator = Orchestrator(
         config=config,
         github_client=github_client,
@@ -144,6 +163,7 @@ def main(argv: list[str] | None = None) -> int:
         markers=markers,
         logger=log,
         provider_factory=_provider_factory,
+        retrieval_layer=retrieval_layer,
     )
 
     # 6. Run
