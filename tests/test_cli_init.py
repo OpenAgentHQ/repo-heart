@@ -28,7 +28,7 @@ def test_init_writes_both_files(tmp_path: Path) -> None:
     assert "provider:" in config_text
     assert "agents:" in config_text
     workflow_text = workflow.read_text(encoding="utf-8")
-    assert "OpenAgentHQ/repoheart@main" in workflow_text
+    assert "OpenAgentHQ/repo-heart@main" in workflow_text
     assert "GITHUB_TOKEN" in workflow_text
 
 

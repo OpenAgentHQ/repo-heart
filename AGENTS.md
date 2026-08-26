@@ -299,8 +299,8 @@ version = "X.Y.Z"   # new version, no leading v
 3. Write release notes under `### Added`, `### Changed`, `### Fixed`, `### Removed`, `### Security` as applicable. Every user-visible change must appear.
 4. Update the diff links at the bottom of the file:
    ```markdown
-   [Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/vX.Y.Z...HEAD
-   [X.Y.Z]: https://github.com/OpenAgentHQ/repoheart/compare/vPREV...vX.Y.Z
+   [Unreleased]: https://github.com/OpenAgentHQ/repo-heart/compare/vX.Y.Z...HEAD
+   [X.Y.Z]: https://github.com/OpenAgentHQ/repo-heart/compare/vPREV...vX.Y.Z
    ```
 
 ### Step 4 — Run the full test gate

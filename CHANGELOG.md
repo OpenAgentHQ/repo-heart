@@ -9,6 +9,18 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.8.1] - 2026-08-26
+
+### Fixed
+
+- Corrected GitHub repository URLs across all files from `OpenAgentHQ/repoheart`
+  (no hyphen) to `OpenAgentHQ/repo-heart` — affects clone URL in `CONTRIBUTING.md`,
+  action usage references (`uses: OpenAgentHQ/repo-heart@main`), issue template links,
+  changelog diff links, CLI output, and GHCR Docker image path in `action.yml` and
+  the Docker publish workflow (also fixed casing: `openagentHQ` → `OpenAgentHQ`)
+
+---
+
 ## [0.8.0] - 2026-08-26
 
 Phase 8 — PyPI Distribution & Zero-Copy Onboarding. First public PyPI release.
@@ -452,13 +464,14 @@ This project follows [Semantic Versioning](https://semver.org/):
 
 ## Links
 
-[Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/v0.8.0...HEAD
-[0.8.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.7.0...v0.8.0
-[0.7.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.6.0...v0.7.0
-[0.6.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.0.0...v0.1.0
-[0.0.0]: https://github.com/OpenAgentHQ/repoheart/releases/tag/v0.0.0
+[Unreleased]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.8.0...v0.8.1
+[0.8.0]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.0.0...v0.1.0
+[0.0.0]: https://github.com/OpenAgentHQ/repo-heart/releases/tag/v0.0.0

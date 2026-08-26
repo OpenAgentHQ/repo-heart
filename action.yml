@@ -14,7 +14,7 @@ inputs:
 
 runs:
   using: "docker"
-  image: "docker://ghcr.io/openagentHQ/repoheart:latest"
+  image: "docker://ghcr.io/OpenAgentHQ/repo-heart:latest"
   args:
     - "--config"
     - "${{ inputs.config }}"

@@ -80,7 +80,7 @@ GitHub Actions is the *execution environment*, not the business logic. The same 
 **1. Add the workflow** (`.github/workflows/repoheart.yml`):
 
 ```yaml
-- uses: OpenAgentHQ/repoheart@main
+- uses: OpenAgentHQ/repo-heart@main
   with:
     config: repoheart.yml
 ```
