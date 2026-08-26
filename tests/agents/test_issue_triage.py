@@ -27,7 +27,7 @@ _CONFIG = RepoHeartConfig(
 _ISSUE = {
     "number": 1,
     "title": "Crash when config file is missing",
-    "body": "RepoHeart throws an exception if opencode.yml is absent.",
+    "body": "RepoHeart throws an exception if repoheart.yml is absent.",
     "state": "open",
 }
 

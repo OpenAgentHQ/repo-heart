@@ -8,9 +8,9 @@ branding:
 
 inputs:
   config:
-    description: "Path to the RepoHeart config file (opencode.yml)."
+    description: "Path to the RepoHeart config file (repoheart.yml)."
     required: false
-    default: "opencode.yml"
+    default: "repoheart.yml"
 
 runs:
   using: "docker"

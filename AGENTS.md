@@ -152,7 +152,7 @@ RepoHeart itself follows a "minimal change" principle; so must you when editing 
 
 ```text
 repoheart/
-├── config/         opencode.yml schema + loader
+├── config/         repoheart.yml schema + loader
 ├── events/         context builder, event types, router
 ├── orchestrator/   sequencing, agent context, budgets
 ├── agents/         one file per agent (base.py = ABC)
@@ -185,7 +185,7 @@ All three green, every time. Additional requirements:
 - **Mock the provider** — never call a real LLM in unit tests.
 - Run locally against a saved payload when relevant:
   ```bash
-  python -m repoheart.main --event examples/issues.opened.json --config opencode.yml
+  python -m repoheart.main --event examples/issues.opened.json --config repoheart.yml
   ```
 
 If you add or change behavior, config, or routing, update the docs in the same PR.
@@ -228,7 +228,7 @@ Copy this into the PR and check every box:
 1. Subclass `Agent` in `agents/<name>.py` — set `name`, `risk_level` (ceiling), `handles_events`.
 2. Implement `run(context) -> AgentResult`. No direct writes.
 3. Register event types in `events/router.py`.
-4. Add config toggle to the schema + `opencode.schema.json`.
+4. Add config toggle to the schema + `repoheart.schema.json`.
 5. Add tests (proposed actions + risk ceiling, mocked provider).
 6. Update roster + routing table in `docs/repoheart-final-system-design.md`.
 

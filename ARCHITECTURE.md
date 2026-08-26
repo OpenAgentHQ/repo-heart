@@ -14,7 +14,7 @@ A GitHub event triggers an ephemeral Actions run in which a deterministic core r
 
 ```text
 Event Context Builder  → normalize raw payload to InternalEvent
-Config Loader          → load + validate opencode.yml
+Config Loader          → load + validate repoheart.yml
 Idempotency Markers    → GitHub-native dedup (labels/comments/trailers)
 Event Router           → deterministic event → agent lookup
 Orchestrator           → sequence agents, enforce budgets + ceilings

@@ -59,7 +59,7 @@ Each has a fixed responsibility, a static risk ceiling, a permission set, and a 
 ```text
 User Repo
  ├── .github/workflows/repoheart.yml   ← one workflow
- └── opencode.yml                      ← config + provider choice
+ └── repoheart.yml                      ← config + provider choice
         │
         ▼
    GitHub Actions (execution environment)
@@ -82,10 +82,10 @@ GitHub Actions is the *execution environment*, not the business logic. The same 
 ```yaml
 - uses: OpenAgentHQ/repoheart@main
   with:
-    config: opencode.yml
+    config: repoheart.yml
 ```
 
-**2. Configure** (`opencode.yml`):
+**2. Configure** (`repoheart.yml`):
 
 ```yaml
 repoheart:
@@ -130,7 +130,7 @@ Python 3.11+
   + Git
   + tree-sitter / ripgrep (retrieval)
   + Provider abstraction (OpenCode / Claude / OpenAI / Gemini / local)
-  + opencode.yml config
+  + repoheart.yml config
 ```
 
 No Redis, no Postgres required.

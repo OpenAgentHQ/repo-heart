@@ -1,4 +1,4 @@
-# opencode.yml — RepoHeart configuration
+# repoheart.yml — RepoHeart configuration
 #
 # This is the single file that controls RepoHeart's behavior.
 # Copy it to your repository root and adjust. Only `provider` and at least

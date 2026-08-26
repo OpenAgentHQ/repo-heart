@@ -67,7 +67,7 @@ vulnerability — please report it immediately.
 - Grant only the permissions listed in the workflow template (`contents: write`,
   `issues: write`, `pull-requests: write`). Do not add broader scopes.
 - Never store provider API keys anywhere except repository secrets.
-- Review the `opencode.yml` config before enabling high-risk agents (CI Repair,
+- Review the `repoheart.yml` config before enabling high-risk agents (CI Repair,
   Conflict Resolution).
 - Monitor the Actions run log — it is the audit trail for every proposed action
   and its Safety Gate decision.

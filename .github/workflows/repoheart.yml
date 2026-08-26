@@ -46,10 +46,10 @@ jobs:
       - name: Run RepoHeart
         uses: OpenAgentHQ/repoheart@main
         with:
-          config: opencode.yml
+          config: repoheart.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Provider credentials — only the ones referenced in opencode.yml
+          # Provider credentials — only the ones referenced in repoheart.yml
           # need to actually be set; unused secrets simply resolve empty.
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

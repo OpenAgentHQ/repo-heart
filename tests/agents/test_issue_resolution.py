@@ -27,7 +27,7 @@ _CONFIG = RepoHeartConfig(
 _ISSUE = {
     "number": 20,
     "title": "Crash when config file is missing",
-    "body": "App throws an exception when opencode.yml is absent.",
+    "body": "App throws an exception when repoheart.yml is absent.",
 }
 
 _MERGED_PR = {

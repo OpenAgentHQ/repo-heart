@@ -1,4 +1,4 @@
-"""Load and validate opencode.yml, returning a typed RepoHeartConfig.
+"""Load and validate repoheart.yml, returning a typed RepoHeartConfig.
 
 This is the fail-fast boundary: any misconfiguration raises ``ConfigError``
 before any agent or API call is made. The caller should treat a ``ConfigError``
@@ -31,11 +31,11 @@ _VALID_RISK_NAMES = {"SAFE", "LOW", "MEDIUM", "HIGH"}
 
 
 class ConfigError(ValueError):
-    """Raised when opencode.yml is missing, unparseable, or semantically invalid."""
+    """Raised when repoheart.yml is missing, unparseable, or semantically invalid."""
 
 
 def load_config(path: str | Path) -> RepoHeartConfig:
-    """Load, parse, and validate opencode.yml.
+    """Load, parse, and validate repoheart.yml.
 
     Raises:
         ConfigError: if the file is missing, unreadable, not valid YAML, or

@@ -1,6 +1,6 @@
 # Configuration Reference
 
-Full reference for `opencode.yml`, the single file that controls RepoHeart. This document mirrors [`opencode.schema.json`](../opencode.schema.json) field-for-field, plus the defaults applied by `repoheart/config/loader.py` when a field is omitted.
+Full reference for `repoheart.yml`, the single file that controls RepoHeart. This document mirrors [`repoheart.schema.json`](../repoheart.schema.json) field-for-field, plus the defaults applied by `repoheart/config/loader.py` when a field is omitted.
 
 Everything lives under one top-level key:
 
@@ -330,7 +330,7 @@ Remember: each provider named here (`openai`, `claude`, …) needs its matching 
 
 ## Safety Gate & risk levels
 
-Two `opencode.yml` fields feed the Safety Gate directly: **`automation.level`** and **`automation.require_human_approval`**. Every other field is orthogonal to safety (provider selection, scale limits, labels, CI watch list).
+Two `repoheart.yml` fields feed the Safety Gate directly: **`automation.level`** and **`automation.require_human_approval`**. Every other field is orthogonal to safety (provider selection, scale limits, labels, CI watch list).
 
 The Safety Gate itself is deterministic code, not an LLM call — per `CLAUDE.md`'s architecture invariants, agents only ever *propose* actions; the gate decides whether each proposed action is allowed, escalated, or denied.
 
@@ -347,7 +347,7 @@ Every action RepoHeart can take carries an intrinsic risk level, ordered from le
 
 A risk level is intrinsic to the *action kind*, not something an agent can choose — `MODIFY_CODE` is always `MEDIUM`, for instance, regardless of which agent proposes it.
 
-Two things are structurally impossible, not just denied by config: there is no `MERGE` action kind at all (it doesn't exist in the code, so no agent — and no cleverly-worded issue text — can cause a merge), and `DELETE_BRANCH` is hard-coded to always `DENY` in the current MVP, independent of any `opencode.yml` setting.
+Two things are structurally impossible, not just denied by config: there is no `MERGE` action kind at all (it doesn't exist in the code, so no agent — and no cleverly-worded issue text — can cause a merge), and `DELETE_BRANCH` is hard-coded to always `DENY` in the current MVP, independent of any `repoheart.yml` setting.
 
 ### How the gate evaluates each proposed action
 
@@ -356,7 +356,7 @@ For every action an agent proposes, the gate checks, in order:
 1. **Hard invariants.** If the action is one of the small set that's always denied in the MVP (currently just branch deletion), it's `DENY` immediately — no config can change this.
 2. **`require_human_approval`.** If the action's risk level is named in this list, it's `ESCALATE` — a human has to approve it, regardless of `automation.level`.
 3. **`automation.level` ceiling.** If the action's risk exceeds the ceiling for the configured level (table above), it's `ESCALATE`.
-4. **`HIGH` risk is always escalated**, even under `level: auto` and even if `HIGH` isn't explicitly listed in `require_human_approval` — there is no way to configure `opencode.yml` to auto-approve a `HIGH`-risk action.
+4. **`HIGH` risk is always escalated**, even under `level: auto` and even if `HIGH` isn't explicitly listed in `require_human_approval` — there is no way to configure `repoheart.yml` to auto-approve a `HIGH`-risk action.
 5. Otherwise, it's `ALLOW`.
 
 Every decision — `ALLOW`, `ESCALATE`, or `DENY` — is logged to the Actions run log with the acting agent, the action kind, its risk, and the reason, so the run log doubles as a full audit trail of what RepoHeart considered doing and why it did or didn't.

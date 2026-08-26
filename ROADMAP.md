@@ -16,7 +16,7 @@ Goal: a repo you can clone, install, and run tests in — even before agents exi
 - ☑ Repo skeleton (package layout per design doc)
 - ☑ `pyproject.toml` (deps, ruff, mypy, pytest config)
 - ☑ `action.yml` + `Dockerfile`
-- ☑ `opencode.schema.json` (published config schema)
+- ☑ `repoheart.schema.json` (published config schema)
 - ☑ CI for RepoHeart itself (lint, type-check, test on PR)
 - ☑ `CONTRIBUTING.md`, `LICENSE`
 
@@ -28,7 +28,7 @@ Goal: a repo you can clone, install, and run tests in — even before agents exi
 
 Goal: everything that is *not* an LLM. This is the backbone; get it rock-solid before adding agents.
 
-- ☑ `config/` — load + validate `opencode.yml`, resolve provider/agents, fail fast on errors
+- ☑ `config/` — load + validate `repoheart.yml`, resolve provider/agents, fail fast on errors
 - ☑ `events/context.py` — parse `GITHUB_EVENT_PATH`, normalize to `InternalEvent`
 - ☑ `events/types.py` — typed event dataclasses
 - ☑ `events/router.py` — event → candidate-agent lookup table
@@ -135,7 +135,7 @@ Goal: the higher-risk automation, gated hard.
 - ☑ `release.published` changelog scope (opt-in via `documentation_config.changelog_on_release`)
 - ☑ End-to-end example repo + demo (`examples/` + `examples/release.published.json`)
 - ☑ Hardening: rate-limit stress, prompt-injection-via-issue-text tests
-- ☑ Docs pass: quickstart, config reference updated; `documentation_config` schema added to `opencode.schema.json`
+- ☑ Docs pass: quickstart, config reference updated; `documentation_config` schema added to `repoheart.schema.json`
 
 **Exit criteria:** a public example repo demonstrates the full loop; a new user can go from zero to working RepoHeart in under 10 minutes. ✅ Verified — 524 tests passing, ruff clean, mypy strict clean on 62 source files. DocumentationAgent (SAFE risk) wired end-to-end for PR/push docstring review and release changelog generation; 42 new tests including rate-limit stress and prompt-injection hardening.
 

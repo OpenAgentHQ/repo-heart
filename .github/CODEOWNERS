@@ -18,4 +18,4 @@ action.yml                  @OpenAgentHQ/maintainers
 Dockerfile                  @OpenAgentHQ/maintainers
 
 # Config schema — changes are a breaking change for users
-opencode.schema.json        @OpenAgentHQ/maintainers
+repoheart.schema.json        @OpenAgentHQ/maintainers
