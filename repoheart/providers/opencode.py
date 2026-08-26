@@ -33,7 +33,7 @@ class OpenCodeProvider(Provider):
         model: str,
         *,
         api_key: str | None = None,
-        base_url: str = "https://api.opencode.ai/v1",
+        base_url: str = "https://opencode.ai/zen/v1",
         timeout: float = 30.0,
         max_retries: int = 3,
     ) -> None:
