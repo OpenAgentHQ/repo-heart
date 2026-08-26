@@ -1,0 +1,31 @@
+{
+  "action": "created",
+  "issue": {
+    "number": 42,
+    "title": "Crash when config file is missing",
+    "body": "RepoHeart throws an unhandled exception if repoheart.yml is absent.",
+    "state": "open",
+    "labels": [
+      { "name": "bug" },
+      { "name": "needs-triage" }
+    ],
+    "user": { "login": "example-contributor" },
+    "created_at": "2026-08-24T09:00:00Z",
+    "updated_at": "2026-08-25T14:20:00Z"
+  },
+  "comment": {
+    "id": 2345678901,
+    "body": "I can reproduce this on macOS 14 with Python 3.11. The traceback is:\n\nTraceback (most recent call last):\n  File \"repoheart/config/loader.py\", line 42\nFileNotFoundError: [Errno 2] No such file or directory: 'repoheart.yml'",
+    "user": { "login": "another-example-user" },
+    "created_at": "2026-08-25T14:20:00Z",
+    "updated_at": "2026-08-25T14:20:00Z",
+    "url": "https://api.github.com/repos/example-org/example-repo/issues/comments/2345678901",
+    "html_url": "https://github.com/example-org/example-repo/issues/42#issuecomment-2345678901"
+  },
+  "repository": {
+    "full_name": "example-org/example-repo",
+    "default_branch": "main",
+    "private": false
+  },
+  "sender": { "login": "another-example-user" }
+}
