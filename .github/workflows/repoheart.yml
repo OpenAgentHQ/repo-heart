@@ -33,26 +33,206 @@ concurrency:
   group: repoheart-${{ github.event.issue.number || github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
-jobs:
-  repoheart:
-    runs-on: ubuntu-latest
+env:
+  # Provider credentials — only the ones referenced in repoheart.yml need to
+  # actually be set; unused secrets simply resolve empty.
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
+jobs:
+  # Computes, per this event, which of RepoHeart's agents actually apply —
+  # via the real routing table (repoheart/events/router.py), not a
+  # hand-maintained copy of it. Every registered agent is included (not just
+  # activated ones) so the matrix below can render the rest as native
+  # GitHub Actions "Skipped" jobs.
+  plan:
+    name: 🔎 Event Detection & Agent Planning
+    runs-on: ubuntu-latest
+    outputs:
+      agents: ${{ steps.plan.outputs.agents }}
+      agent_ids: ${{ steps.plan.outputs.agent_ids }}
+      event: ${{ steps.plan.outputs.event }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Run RepoHeart
+      - name: Compute agent plan
         uses: OpenAgentHQ/repo-heart@main
         with:
           config: repoheart.yml
+          command: plan
+
+      - name: Publish plan as job outputs
+        id: plan
+        run: |
+          python3 - <<'PY'
+          import json, os
+
+          with open(".repoheart/plan.json") as f:
+              plan = json.load(f)
+
+          gh_out = os.environ["GITHUB_OUTPUT"]
+          with open(gh_out, "a") as out:
+              out.write(f"agents={json.dumps(plan['agents'])}\n")
+              out.write(f"agent_ids={json.dumps(plan['agent_ids'])}\n")
+              out.write(f"event={plan['event']}\n")
+
+          gh_summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          if gh_summary:
+              with open(gh_summary, "a") as s:
+                  s.write(f"# ❤️ RepoHeart Execution\n\n## Event\n\n`{plan['event']}`\n\n")
+                  activated = [a for a in plan["agents"] if a["activated"]]
+                  names = ", ".join(a["label"] for a in activated) or "none"
+                  s.write(f"**Activated agents:** {names}\n")
+          PY
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: repoheart-plan
+          path: .repoheart/plan.json
+          retention-days: 7
+
+  # One job template, run once per registered agent via the matrix. Agents
+  # not selected for this event (per `plan`) render as native GitHub Actions
+  # "Skipped" — that's the built-in ⏭️ semantics, not a custom status we fake.
+  #
+  # A single matrix (rather than separate issue/PR/CI matrices) is used
+  # deliberately: several agents span more than one category in the real
+  # routing table (`conflict_resolution` runs on both `pull_request` and
+  # `push`; `documentation` runs on `push`, `release`, and PR events), so a
+  # clean 3-way split doesn't reflect the actual routing table. Each matrix
+  # entry still needs its own checkout + image pull — matrix entries run on
+  # separate runners, so per-job setup can't be shared across them.
+  agents:
+    name: ${{ matrix.agent.emoji }} ${{ matrix.agent.label }}
+    needs: plan
+    if: ${{ contains(fromJSON(needs.plan.outputs.agent_ids), matrix.agent.id) }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        agent: ${{ fromJSON(needs.plan.outputs.agents) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Run ${{ matrix.agent.label }}
+        uses: OpenAgentHQ/repo-heart@main
+        with:
+          config: repoheart.yml
+          command: run
+          agent: ${{ matrix.agent.id }}
+
+      - name: Upload agent result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repoheart-result-${{ matrix.agent.id }}
+          path: .repoheart/result-${{ matrix.agent.id }}.json
+          retention-days: 7
+
+  # Renders the consolidated status table and decides the workflow's honest
+  # overall outcome: a blocking agent's failure fails this job (and so the
+  # workflow), even though `agents` itself is a matrix that GitHub always
+  # reports success/failure/skip for individually.
+  summary:
+    name: 📊 Execution Summary
+    needs: [plan, agents]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all agent results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: repoheart-result-*
+          path: results
+          merge-multiple: true
+
+      - name: Render summary and set final status
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Provider credentials — only the ones referenced in repoheart.yml
-          # need to actually be set; unused secrets simply resolve empty.
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          PLAN_AGENTS: ${{ needs.plan.outputs.agents }}
+          PLAN_EVENT: ${{ needs.plan.outputs.event }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          plan_agents = json.loads(os.environ["PLAN_AGENTS"])
+          event = os.environ["PLAN_EVENT"]
+
+          results = {}
+          results_dir = Path("results")
+          if results_dir.is_dir():
+              for f in results_dir.glob("result-*.json"):
+                  data = json.loads(f.read_text())
+                  results[data["agent"]] = data
+
+          rows = []
+          blocking_failed = []
+          for agent in plan_agents:
+              agent_id = agent["id"]
+              result = results.get(agent_id)
+              if not agent["activated"]:
+                  status_icon, stage = "⏭️", "Not applicable"
+              elif result is None:
+                  # Activated but no artifact — the job crashed before writing one.
+                  status_icon, stage = "❌", "Job did not complete"
+                  if agent["blocking"]:
+                      blocking_failed.append(agent["label"])
+              elif result["status"] == "ok":
+                  status_icon, stage = "✅", "Completed"
+              else:
+                  status_icon, stage = "❌", result.get("stage", "unknown")
+                  if agent["blocking"]:
+                      blocking_failed.append(agent["label"])
+
+              blocking_note = "" if agent["blocking"] else " _(non-blocking)_"
+              rows.append(
+                  f"| {agent['emoji']} {agent['label']}{blocking_note} "
+                  f"| {status_icon} | {stage} |"
+              )
+
+          providers = sorted({a["provider"] for a in plan_agents if a["activated"] and a["provider"]})
+
+          lines = [
+              "## Agents",
+              "",
+              "| Agent | Status | Stage |",
+              "|---|---|---|",
+              *rows,
+              "",
+              "## Provider",
+              "",
+              ", ".join(providers) or "none",
+              "",
+              "## Result",
+              "",
+          ]
+
+          if blocking_failed:
+              lines.append(f"❌ Failed — blocking agent(s) did not complete: {', '.join(blocking_failed)}")
+          elif any(not a["activated"] for a in plan_agents):
+              lines.append("⚠️ Partial run — some agents were not applicable to this event")
+          else:
+              lines.append("✅ Success")
+
+          summary_text = "\n".join(lines) + "\n"
+
+          gh_summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          if gh_summary:
+              with open(gh_summary, "a") as s:
+                  s.write(f"\n{summary_text}")
+          print(summary_text)
+
+          if blocking_failed:
+              raise SystemExit(1)
+          PY

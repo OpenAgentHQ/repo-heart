@@ -222,3 +222,7 @@ __marimo__/
 
 .claude/
 .opencode/
+
+# RepoHeart Actions plan/result artifacts (written into the workspace at
+# runtime, consumed by the workflow's summary job).
+.repoheart/

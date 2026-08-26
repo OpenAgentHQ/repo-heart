@@ -11,10 +11,28 @@ inputs:
     description: "Path to the RepoHeart config file (repoheart.yml)."
     required: false
     default: "repoheart.yml"
+  command:
+    description: >
+      RepoHeart CLI subcommand to run: "run" (default, executes agent(s) for
+      the event) or "plan" (computes per-agent activation for the event and
+      writes .repoheart/plan.json, without running any agent).
+    required: false
+    default: "run"
+  agent:
+    description: >
+      When command is "run", restrict execution to this single agent name
+      (e.g. "issue_triage"). Leave empty to run every agent the router
+      selects for the event — the original, unrestricted behavior. Ignored
+      when command is "plan".
+    required: false
+    default: ""
 
 runs:
   using: "docker"
   image: "docker://ghcr.io/openagenthq/repo-heart:latest"
   args:
+    - "${{ inputs.command }}"
     - "--config"
     - "${{ inputs.config }}"
+    - "--agent"
+    - "${{ inputs.agent }}"

@@ -104,11 +104,16 @@ class Agent(ABC):
       * ``name``          — stable identifier, used in logs and markers.
       * ``risk_level``    — the static ceiling this agent can never exceed.
       * ``handles_events``— event types the router may dispatch to it.
+      * ``blocking``      — whether this agent's failure should fail the overall
+                            run/workflow (default True, matching today's
+                            behavior). Set False on agents whose findings are
+                            purely informational.
     """
 
     name: str = "agent"
     risk_level: RiskLevel = RiskLevel.SAFE
     handles_events: list[str] = []
+    blocking: bool = True
 
     @abstractmethod
     def run(self, context: Any) -> AgentResult:
