@@ -35,6 +35,13 @@ openai = ["openai>=1.40"]
 scale = ["tree-sitter>=0.21", "tree-sitter-python>=0.21"]
 scale-semantic = ["numpy>=1.26"]
 
+[project.urls]
+Homepage = "https://github.com/OpenAgentHQ/repo-heart"
+Repository = "https://github.com/OpenAgentHQ/repo-heart"
+"Bug Tracker" = "https://github.com/OpenAgentHQ/repo-heart/issues"
+Changelog = "https://github.com/OpenAgentHQ/repo-heart/blob/main/CHANGELOG.md"
+PyPI = "https://pypi.org/project/repoheart/"
+
 [project.scripts]
 repoheart = "repoheart.main:main"
 
