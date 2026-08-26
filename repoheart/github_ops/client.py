@@ -110,6 +110,21 @@ class GitHubClient:
             return items if isinstance(items, list) else []
         return []
 
+    def get_pr_files(self, repo: str, number: int) -> list[dict[str, Any]]:
+        """Return the list of files changed in a pull request."""
+        data = self._get(f"/repos/{repo}/pulls/{number}/files")
+        return data if isinstance(data, list) else []
+
+    def get_pr_reviews(self, repo: str, number: int) -> list[dict[str, Any]]:
+        """Return submitted reviews on a pull request."""
+        data = self._get(f"/repos/{repo}/pulls/{number}/reviews")
+        return data if isinstance(data, list) else []
+
+    def get_pr_comments(self, repo: str, number: int) -> list[dict[str, Any]]:
+        """Return inline review comments on a pull request."""
+        data = self._get(f"/repos/{repo}/pulls/{number}/comments")
+        return data if isinstance(data, list) else []
+
     # ── Write operations (Decision.ALLOW required) ───────────────────────────
 
     def add_label(
@@ -131,6 +146,27 @@ class GitHubClient:
     ) -> None:
         self._check_write_allowed(decision)
         self._post(f"/repos/{repo}/issues/{number}/comments", {"body": body})
+
+    def create_pr_review(
+        self,
+        repo: str,
+        pr_number: int,
+        body: str,
+        inline_comments: list[dict[str, Any]],
+        commit_id: str,
+        decision: Decision,
+    ) -> None:
+        """Post a PR review with optional inline comments (COMMENT event, non-approving)."""
+        self._check_write_allowed(decision)
+        self._post(
+            f"/repos/{repo}/pulls/{pr_number}/reviews",
+            {
+                "commit_id": commit_id,
+                "body": body,
+                "event": "COMMENT",
+                "comments": inline_comments,
+            },
+        )
 
     def create_label(
         self,

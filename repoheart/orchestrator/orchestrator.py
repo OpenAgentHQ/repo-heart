@@ -7,6 +7,11 @@ one failing agent never aborts the entire run.
 
 from __future__ import annotations
 
+import contextlib
+import glob
+import os
+import subprocess
+import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -21,9 +26,116 @@ from repoheart.idempotency.fingerprint import fingerprint_for_event
 from repoheart.idempotency.markers import IdempotencyMarkers
 from repoheart.observability.logger import StructuredLogger
 from repoheart.orchestrator.agent_context import AgentContext
+from repoheart.orchestrator.issue_flow import comment_already_posted, format_issue_comment
+from repoheart.orchestrator.pr_flow import already_reviewed, consolidate
 from repoheart.providers.base import Provider
 from repoheart.safety.gate import SafetyGate
 from repoheart.safety.policy import ActionKind, Decision
+
+_PR_AGENT_NAMES = {"pr_review", "code_quality", "security", "test"}
+
+# ── Deterministic PR context helpers (no LLM, no GitHub) ─────────────────────
+
+def _run_linters(py_files: list[str]) -> str:
+    """Run ruff and mypy on the given Python files; return combined output.
+
+    Returns an empty string if the tools are not installed or all files
+    are missing from disk (e.g. deleted in the PR).
+    """
+    existing = [f for f in py_files if os.path.isfile(f)]
+    if not existing:
+        return ""
+
+    parts: list[str] = []
+
+    # ruff
+    try:
+        result = subprocess.run(
+            ["ruff", "check", "--output-format=concise", *existing],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if result.stdout.strip():
+            parts.append(f"=== ruff ===\n{result.stdout.strip()}")
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    # mypy
+    try:
+        result = subprocess.run(
+            ["mypy", "--no-error-summary", *existing],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if result.stdout.strip():
+            parts.append(f"=== mypy ===\n{result.stdout.strip()}")
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    combined = "\n\n".join(parts)
+    return combined[:20_000]
+
+
+def _scan_secrets(diff: str) -> str:
+    """Run detect-secrets against the diff; return raw output.
+
+    Returns an empty string if the tool is not installed.
+    """
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".diff", delete=False, encoding="utf-8"
+        ) as tmp:
+            tmp.write(diff)
+            tmp_path = tmp.name
+
+        result = subprocess.run(
+            ["detect-secrets", "scan", tmp_path],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        output = result.stdout.strip()
+        with contextlib.suppress(OSError):
+            os.unlink(tmp_path)
+        return output[:5_000]
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return ""
+
+
+def _filter_to_diff(inline_comments: list[dict[str, Any]], diff: str) -> list[dict[str, Any]]:
+    """Remove inline comments for files not present in the diff.
+
+    Prevents GitHub 422 errors for comments outside the diff hunk.
+    """
+    files_in_diff = {
+        line[6:] for line in diff.splitlines() if line.startswith("+++ b/")
+    }
+    return [c for c in inline_comments if c.get("path") in files_in_diff]
+
+
+def _map_tests(changed_files: list[str], repo_root: str) -> dict[str, list[str]]:
+    """Map each changed Python module to candidate test files under tests/.
+
+    Uses simple naming conventions:
+      src/foo/bar.py  →  look for tests/**/test_bar.py  and  tests/**/bar_test.py
+    """
+    mapping: dict[str, list[str]] = {}
+    for filepath in changed_files:
+        if not filepath.endswith(".py"):
+            continue
+        stem = os.path.splitext(os.path.basename(filepath))[0]
+        patterns = [
+            os.path.join(repo_root, "tests", "**", f"test_{stem}.py"),
+            os.path.join(repo_root, "tests", "**", f"{stem}_test.py"),
+        ]
+        found: list[str] = []
+        for pattern in patterns:
+            matches = glob.glob(pattern, recursive=True)
+            found.extend(os.path.relpath(m, repo_root) for m in matches)
+        mapping[filepath] = found
+    return mapping
 
 
 @dataclass
@@ -69,8 +181,13 @@ class Orchestrator:
         4. Call agent.run(context) — catch exceptions, log, continue.
         5. Validate agent's risk ceiling.
         6. For each proposed action: gate → execute / escalate / deny.
+
+        For PR events, after all PR agents run their individual proposed actions
+        are dispatched first, then a single consolidated review comment is posted
+        (idempotent — skipped if already present).
         """
         summary = RunSummary(event=event)
+        pr_agent_results: dict[str, AgentResult] = {}
 
         for agent_name in agent_names:
             fingerprint = fingerprint_for_event(event, agent_name)
@@ -138,7 +255,11 @@ class Orchestrator:
                 actions=len(result.proposed_actions),
             )
 
-            # 6. Gate and dispatch
+            # Collect PR agent results for consolidated comment (posted after loop)
+            if agent_name in _PR_AGENT_NAMES:
+                pr_agent_results[agent_name] = result
+
+            # 6. Gate and dispatch per-agent proposed actions (labels, etc.)
             for action in result.proposed_actions:
                 decision = self._gate.authorize(action, agent_name)
                 if decision == Decision.ALLOW:
@@ -155,6 +276,18 @@ class Orchestrator:
                     )
                     summary.actions_denied += 1
 
+            # Deliver IssueComment objects (issue agents only)
+            if result.issue_comments:
+                taken, escalated = self._deliver_issue_comments(result, agent_name, event)
+                summary.actions_taken += taken
+                summary.actions_escalated += escalated
+
+        # Post one consolidated PR review comment after all PR agents have run
+        if pr_agent_results:
+            taken, escalated = self._post_consolidated_review(pr_agent_results, event)
+            summary.actions_taken += taken
+            summary.actions_escalated += escalated
+
         return summary
 
     def _build_context(
@@ -169,6 +302,11 @@ class Orchestrator:
         repo_labels: list[dict[str, Any]] = []
         candidate_issues: list[dict[str, Any]] = []
         linked_pull_requests: list[dict[str, Any]] = []
+        diff: str = ""
+        changed_files: list[str] = []
+        linter_output: str = ""
+        secret_scan_output: str = ""
+        test_mapping: dict[str, list[str]] = {}
 
         provider: Provider | None = None
         if self._provider_factory is not None:
@@ -220,6 +358,32 @@ class Orchestrator:
                     linked_pull_requests = self._github.get_linked_pull_requests(
                         event.repo_full_name, int(issue_number)
                     )
+            elif agent_name in _PR_AGENT_NAMES and pr_data is not None:
+                base_sha = pr_data.get("base", {}).get("sha", "")
+                head_sha = pr_data.get("head", {}).get("sha", "")
+                if base_sha and head_sha:
+                    try:
+                        changed_files = self._git.list_changed_files(base_sha, head_sha)
+                        raw_diff = self._git.get_diff(base_sha, head_sha)
+                        diff = raw_diff[:40_000]
+                    except Exception as git_exc:
+                        self._logger.log(
+                            event_msg="context_fetch_error",
+                            agent=agent_name,
+                            error=f"git diff failed: {git_exc}",
+                        )
+
+                if agent_name == "code_quality" and changed_files:
+                    py_files = [f for f in changed_files if f.endswith(".py")]
+                    if py_files:
+                        linter_output = _run_linters(py_files)
+
+                if agent_name == "security" and diff:
+                    secret_scan_output = _scan_secrets(diff)
+
+                if agent_name == "test" and changed_files:
+                    test_mapping = _map_tests(changed_files, str(self._git._repo_path))
+
         except Exception as exc:
             self._logger.log(
                 event_msg="context_fetch_error",
@@ -233,11 +397,160 @@ class Orchestrator:
             provider=provider,
             issue_data=issue_data,
             pr_data=pr_data,
+            diff=diff,
+            changed_files=changed_files,
             fingerprint=fingerprint,
             repo_labels=repo_labels,
             candidate_issues=candidate_issues,
             linked_pull_requests=linked_pull_requests,
+            linter_output=linter_output,
+            secret_scan_output=secret_scan_output,
+            test_mapping=test_mapping,
         )
+
+    def _deliver_issue_comments(
+        self,
+        result: AgentResult,
+        agent_name: str,
+        event: InternalEvent,
+    ) -> tuple[int, int]:
+        """Format and post IssueComment objects; return (taken, escalated)."""
+        entity_number = self._extract_entity_number(event)
+        if entity_number is None or not self._github._token:
+            return 0, 0
+
+        # Idempotency: check if marker already present
+        try:
+            existing = self._github.get_issue_comments(event.repo_full_name, entity_number)
+            if comment_already_posted(existing, agent_name):
+                self._logger.log(
+                    event_msg="issue_comment_skipped",
+                    agent=agent_name,
+                    reason="already_posted",
+                )
+                return 0, 0
+        except Exception as exc:
+            self._logger.log(
+                event_msg="issue_comment_idempotency_error",
+                agent=agent_name,
+                error=str(exc),
+            )
+
+        taken = 0
+        escalated = 0
+        for ic in result.issue_comments:
+            body = format_issue_comment(ic, agent_name)
+            action = ProposedAction(
+                kind=ActionKind.POST_COMMENT,
+                payload={"body": body},
+                reason=f"Issue comment from {agent_name}: {ic.title}",
+            )
+            decision = self._gate.authorize(action, agent_name)
+            if decision == Decision.ALLOW:
+                try:
+                    self._github.post_comment(
+                        event.repo_full_name, entity_number, body, decision
+                    )
+                    self._logger.log(
+                        event_msg="issue_comment_posted",
+                        agent=agent_name,
+                        title=ic.title,
+                    )
+                    taken += 1
+                except Exception as exc:
+                    self._logger.log(
+                        event_msg="issue_comment_error",
+                        agent=agent_name,
+                        error=str(exc),
+                    )
+            elif decision == Decision.ESCALATE:
+                self._post_escalation(action, agent_name, event)
+                escalated += 1
+            else:
+                self._logger.log(
+                    event_msg="issue_comment_denied",
+                    agent=agent_name,
+                )
+        return taken, escalated
+
+    def _post_consolidated_review(
+        self,
+        pr_agent_results: dict[str, AgentResult],
+        event: InternalEvent,
+    ) -> tuple[int, int]:
+        """Post one consolidated PR review via the GitHub PR Review API.
+
+        Returns (taken, escalated).
+        """
+        entity_number = self._extract_entity_number(event)
+        if entity_number is None or not self._github._token:
+            self._logger.log(
+                event_msg="consolidated_review_skipped",
+                reason="no_token_or_entity",
+            )
+            return 0, 0
+
+        # Idempotency: skip if a consolidated review already exists
+        try:
+            existing = self._github.get_issue_comments(event.repo_full_name, entity_number)
+            if already_reviewed(existing):
+                self._logger.log(
+                    event_msg="consolidated_review_skipped",
+                    reason="already_posted",
+                )
+                return 0, 0
+        except Exception as exc:
+            self._logger.log(
+                event_msg="consolidated_review_idempotency_error",
+                error=str(exc),
+            )
+
+        review_body, inline_comments = consolidate(pr_agent_results)
+
+        # Resolve commit_id from event payload (pr_data is on context, not on result)
+        commit_id = ""
+        pr_payload = event.payload.get("pull_request", {})
+        if isinstance(pr_payload, dict):
+            commit_id = str(pr_payload.get("head", {}).get("sha", ""))
+
+        # diff is not available here (it lives in AgentContext); skip diff-filtering
+        # when inline comments are present — GitHub will reject out-of-diff lines,
+        # but that is a recoverable 422 that the caller can log.
+        valid_inline = inline_comments
+
+        if commit_id:
+            action = ProposedAction(
+                kind=ActionKind.CREATE_PR_REVIEW,
+                payload={
+                    "body": review_body,
+                    "inline_comments": valid_inline,
+                    "commit_id": commit_id,
+                },
+                reason="Consolidated PR review from all PR agents",
+            )
+        else:
+            # Fallback: plain comment when commit SHA unavailable
+            action = ProposedAction(
+                kind=ActionKind.POST_COMMENT,
+                payload={"body": review_body},
+                reason="Consolidated PR review (no commit SHA available)",
+            )
+
+        decision = self._gate.authorize(action, "pr_review_consolidator")
+        if decision == Decision.ALLOW:
+            try:
+                self._execute_action(action, event, decision)
+                self._logger.log(event_msg="consolidated_review_posted", pr=entity_number)
+                return 1, 0
+            except Exception as exc:
+                self._logger.log(event_msg="consolidated_review_error", error=str(exc))
+                return 0, 0
+        elif decision == Decision.ESCALATE:
+            self._post_escalation(action, "pr_review_consolidator", event)
+            return 0, 1
+        else:
+            self._logger.log(event_msg="consolidated_review_denied")
+            return 0, 0
 
     def _execute_action(
         self,
@@ -259,6 +572,18 @@ class Orchestrator:
         elif action.kind == ActionKind.POST_COMMENT and entity_number is not None:
             body = str(action.payload.get("body", ""))
             if body:
+                self._github.post_comment(event.repo_full_name, entity_number, body, decision)
+
+        elif action.kind == ActionKind.CREATE_PR_REVIEW and entity_number is not None:
+            body = str(action.payload.get("body", ""))
+            commit_id = str(action.payload.get("commit_id", ""))
+            inline: list[dict[str, Any]] = list(action.payload.get("inline_comments", []))
+            if commit_id:
+                self._github.create_pr_review(
+                    event.repo_full_name, entity_number, body, inline, commit_id, decision
+                )
+            elif body:
+                # Fallback when commit SHA missing — post as plain comment
                 self._github.post_comment(event.repo_full_name, entity_number, body, decision)
 
         else:

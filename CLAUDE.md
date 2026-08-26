@@ -84,18 +84,41 @@ When adding a feature, put it in the component that owns that responsibility. Do
 - **No hidden I/O in agents.** Agents receive an `AgentContext` and return an `AgentResult`. Pure-ish: reasoning in, declaration out.
 - **Logging:** structured single-line `key=value` records via `observability/logger.py`. The Actions run log is the audit trail — log every proposed action and its `Decision`.
 - **Errors:** fail fast on config errors (before any agent runs); catch per-agent exceptions at the orchestrator so one bad agent doesn't kill the run.
-- **Tests:** every agent needs a test that feeds a synthetic event and asserts the `ProposedAction`s (and that none exceed the agent's risk ceiling). Mock the provider — never hit a real LLM in unit tests.
+- **Tests:** every agent needs a test that feeds a synthetic event and asserts the typed output (`review_comments` or `issue_comments`) and that no action exceeds the agent's risk ceiling. Mock the provider — never hit a real LLM in unit tests.
+
+---
+
+## Agent Output Conventions
+
+RepoHeart agents produce four distinct output types:
+
+| Type | Use for | Who consumes it |
+|---|---|---|
+| `ReviewComment` | Code findings for PRs (file, line, severity, suggestion) | `pr_flow.consolidate()` → `CREATE_PR_REVIEW` |
+| `IssueComment` | Issue-level findings (triage, duplicates, resolution) | `issue_flow.format_issue_comment()` → `POST_COMMENT` |
+| `Finding` | Internal status, errors, diagnostics only | Logged; never shown to developers |
+| `ProposedAction` | Non-content actions: `ADD_LABEL`, `CREATE_PR_REVIEW` | Safety Gate → GitHub |
+
+**Agents must never:**
+- Construct GitHub markdown comment bodies (that is the orchestrator/formatter's job)
+- Propose `POST_COMMENT` with a pre-formatted body (use `IssueComment` instead)
+- Put user-facing content inside `Finding.summary` strings
+
+**PR agents** return `review_comments: list[ReviewComment]` — no `POST_COMMENT` proposals.  
+**Issue agents** return `issue_comments: list[IssueComment]` — no `POST_COMMENT` proposals.  
+Both may still propose `ADD_LABEL`.
 
 ---
 
 ## Adding a New Agent (checklist)
 
 1. Subclass `Agent` in `agents/<name>.py`; set `name`, `risk_level` (ceiling), `handles_events`.
-2. Implement `run(context) -> AgentResult`. No direct writes.
+2. Implement `run(context) -> AgentResult`. No direct writes. Use `ReviewComment` for PR agents, `IssueComment` for issue agents. Use `Finding` only for errors. Never propose `POST_COMMENT`.
 3. Register the agent's event types in `events/router.py`.
-4. Add config toggle in the `opencode.yml` schema + `opencode.schema.json`.
-5. Add a unit test asserting proposed actions + risk ceiling.
-6. Update the routing table + roster in the final design doc.
+4. Add to `AGENT_REGISTRY` in `agents/registry.py`.
+5. Add config toggle in the `opencode.yml` schema + `opencode.schema.json`.
+6. Add a unit test asserting typed output (`review_comments` or `issue_comments`) + risk ceiling.
+7. Update the routing table + roster in the final design doc.
 
 ## Adding a New Provider (checklist)
 

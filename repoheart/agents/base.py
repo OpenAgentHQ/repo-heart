@@ -17,11 +17,45 @@ from repoheart.safety.policy import ACTION_RISK, ActionKind, RiskLevel
 
 @dataclass(frozen=True)
 class Finding:
-    """A single observation an agent made about the repository."""
+    """Status / error / diagnostic message from an agent. Not for user-facing content."""
 
     summary: str
     detail: str = ""
     references: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class ReviewComment:
+    """Structured, actionable code-level comment for PR agents.
+
+    Agents produce these; the orchestrator formats and delivers them via the
+    GitHub PR Review API (inline where file/line are present, else in the body).
+    """
+
+    title: str
+    body: str
+    severity: str  # "critical" | "high" | "warning" | "info"
+    file: str | None = None
+    line: int | None = None
+    end_line: int | None = None
+    suggestion: str | None = None
+    category: str | None = None  # "security" | "correctness" | "style" | "coverage"
+    source: str = ""  # agent name, set by orchestrator
+
+
+@dataclass(frozen=True)
+class IssueComment:
+    """Structured issue-level comment for issue agents.
+
+    Agents produce these; the orchestrator formats and posts them with an
+    idempotency marker via POST_COMMENT.
+    """
+
+    title: str
+    body: str
+    severity: str = "info"  # "critical" | "high" | "warning" | "info"
+    references: list[str] = field(default_factory=list)  # e.g. ["#123"]
+    source: str = ""  # agent name, set by orchestrator
 
 
 @dataclass(frozen=True)
@@ -51,9 +85,11 @@ class ProposedAction:
 
 @dataclass
 class AgentResult:
-    """What an agent returns: findings plus declarative proposed actions."""
+    """What an agent returns: typed outputs plus declarative proposed actions."""
 
     findings: list[Finding] = field(default_factory=list)
+    review_comments: list[ReviewComment] = field(default_factory=list)
+    issue_comments: list[IssueComment] = field(default_factory=list)
     proposed_actions: list[ProposedAction] = field(default_factory=list)
     confidence: float = 1.0
     needs_human_review: bool = False

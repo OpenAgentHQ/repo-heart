@@ -64,31 +64,40 @@ def _make_context(
     )
 
 
-def test_high_confidence_duplicate_adds_label_and_comment() -> None:
+def test_high_confidence_duplicate_adds_label_and_issue_comment() -> None:
     ctx = _make_context(MockProvider(default_response=CannedResponse(_HIGH_CONF_RESPONSE)))
     result = DuplicateDetectionAgent().run(ctx)
 
     kinds = {a.kind for a in result.proposed_actions}
     assert ActionKind.ADD_LABEL in kinds
-    assert ActionKind.POST_COMMENT in kinds
+    assert ActionKind.POST_COMMENT not in kinds
+    assert result.issue_comments
+    assert result.issue_comments[0].title == "Possible duplicate"
+
+
+def test_high_confidence_adds_label() -> None:
+    ctx = _make_context(MockProvider(default_response=CannedResponse(_HIGH_CONF_RESPONSE)))
+    result = DuplicateDetectionAgent().run(ctx)
 
     label_action = next(a for a in result.proposed_actions if a.kind == ActionKind.ADD_LABEL)
     assert "duplicate" in label_action.payload["labels"]
 
 
-def test_medium_confidence_posts_comment_no_label() -> None:
+def test_medium_confidence_posts_issue_comment_no_label() -> None:
     ctx = _make_context(MockProvider(default_response=CannedResponse(_MEDIUM_CONF_RESPONSE)))
     result = DuplicateDetectionAgent().run(ctx)
 
     kinds = {a.kind for a in result.proposed_actions}
-    assert ActionKind.POST_COMMENT in kinds
     assert ActionKind.ADD_LABEL not in kinds
+    assert result.issue_comments
+    assert result.issue_comments[0].title == "Possibly related issue"
 
 
 def test_no_duplicates_returns_no_actions() -> None:
     ctx = _make_context(MockProvider(default_response=CannedResponse(_NO_DUPLICATES_RESPONSE)))
     result = DuplicateDetectionAgent().run(ctx)
     assert result.proposed_actions == []
+    assert not result.issue_comments
 
 
 def test_no_candidates_returns_no_actions() -> None:
@@ -100,12 +109,11 @@ def test_no_candidates_returns_no_actions() -> None:
     assert result.proposed_actions == []
 
 
-def test_duplicate_comment_contains_idempotency_marker() -> None:
+def test_high_conf_issue_comment_has_reference() -> None:
     ctx = _make_context(MockProvider(default_response=CannedResponse(_HIGH_CONF_RESPONSE)))
     result = DuplicateDetectionAgent().run(ctx)
-
-    comment = next(a for a in result.proposed_actions if a.kind == ActionKind.POST_COMMENT)
-    assert "<!-- repoheart:duplicate-check -->" in comment.payload["body"]
+    ic = result.issue_comments[0]
+    assert "#5" in ic.references
 
 
 def test_malformed_json_returns_no_actions() -> None:

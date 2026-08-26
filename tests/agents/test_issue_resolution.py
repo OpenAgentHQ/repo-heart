@@ -81,31 +81,35 @@ def _make_context(
     )
 
 
-def test_high_confidence_posts_comment_and_label() -> None:
+def test_high_confidence_produces_issue_comment_and_label() -> None:
     ctx = _make_context(MockProvider(default_response=CannedResponse(_HIGH_CONF_RESPONSE)))
     result = IssueResolutionAgent().run(ctx)
 
     kinds = {a.kind for a in result.proposed_actions}
-    assert ActionKind.POST_COMMENT in kinds
+    assert ActionKind.POST_COMMENT not in kinds
     assert ActionKind.ADD_LABEL in kinds
+    assert result.issue_comments
+    assert result.issue_comments[0].title == "Possibly already fixed"
 
     label_action = next(a for a in result.proposed_actions if a.kind == ActionKind.ADD_LABEL)
     assert "already-fixed" in label_action.payload["labels"]
 
 
-def test_medium_confidence_posts_comment_no_label() -> None:
+def test_medium_confidence_produces_issue_comment_no_label() -> None:
     ctx = _make_context(MockProvider(default_response=CannedResponse(_MEDIUM_CONF_RESPONSE)))
     result = IssueResolutionAgent().run(ctx)
 
     kinds = {a.kind for a in result.proposed_actions}
-    assert ActionKind.POST_COMMENT in kinds
     assert ActionKind.ADD_LABEL not in kinds
+    assert result.issue_comments
+    assert result.issue_comments[0].severity == "warning"
 
 
 def test_not_resolved_returns_no_actions() -> None:
     ctx = _make_context(MockProvider(default_response=CannedResponse(_NOT_RESOLVED_RESPONSE)))
     result = IssueResolutionAgent().run(ctx)
     assert result.proposed_actions == []
+    assert not result.issue_comments
 
 
 def test_no_linked_prs_returns_no_actions() -> None:
@@ -126,12 +130,11 @@ def test_open_pr_ignored() -> None:
     assert result.proposed_actions == []
 
 
-def test_resolution_comment_contains_idempotency_marker() -> None:
+def test_high_conf_issue_comment_has_reference() -> None:
     ctx = _make_context(MockProvider(default_response=CannedResponse(_HIGH_CONF_RESPONSE)))
     result = IssueResolutionAgent().run(ctx)
-
-    comment = next(a for a in result.proposed_actions if a.kind == ActionKind.POST_COMMENT)
-    assert "<!-- repoheart:resolution-check -->" in comment.payload["body"]
+    ic = result.issue_comments[0]
+    assert "#99" in ic.references
 
 
 def test_malformed_json_returns_no_actions() -> None:

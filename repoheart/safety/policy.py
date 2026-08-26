@@ -37,6 +37,7 @@ class ActionKind(Enum):
     ADD_LABEL = "add_label"
     REMOVE_LABEL = "remove_label"
     POST_COMMENT = "post_comment"
+    CREATE_PR_REVIEW = "create_pr_review"
     # LOW
     CREATE_BRANCH = "create_branch"
     # MEDIUM
@@ -54,6 +55,7 @@ ACTION_RISK: dict[ActionKind, RiskLevel] = {
     ActionKind.ADD_LABEL: RiskLevel.SAFE,
     ActionKind.REMOVE_LABEL: RiskLevel.SAFE,
     ActionKind.POST_COMMENT: RiskLevel.SAFE,
+    ActionKind.CREATE_PR_REVIEW: RiskLevel.SAFE,
     ActionKind.CREATE_BRANCH: RiskLevel.LOW,
     ActionKind.MODIFY_CODE: RiskLevel.MEDIUM,
     ActionKind.COMMIT: RiskLevel.MEDIUM,

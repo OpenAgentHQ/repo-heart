@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 
-from repoheart.agents.base import Agent, AgentResult, Finding, ProposedAction
+from repoheart.agents.base import Agent, AgentResult, Finding, IssueComment, ProposedAction
 from repoheart.orchestrator.agent_context import AgentContext
 from repoheart.providers.base import CompletionRequest, Message
 from repoheart.safety.policy import ActionKind, RiskLevel
@@ -27,18 +27,11 @@ Use only label names from the provided available_labels list. \
 If no labels fit, use an empty array.\
 """
 
-_TRIAGE_COMMENT = """\
-<!-- repoheart:triage -->
-**Issue Triage Summary**
-
-{summary}
-
-- **Type:** {type}
-- **Priority:** {priority}
-- **Component:** {component}
-
-_Automated triage by [RepoHeart](https://github.com/OpenAgentHQ/repo-heart)._\
-"""
+_PRIORITY_SEVERITY: dict[str, str] = {
+    "high": "high",
+    "medium": "warning",
+    "low": "info",
+}
 
 
 class IssueTriageAgent(Agent):
@@ -118,20 +111,24 @@ class IssueTriageAgent(Agent):
                 )
             )
 
-        proposed_actions.append(
-            ProposedAction(
-                kind=ActionKind.POST_COMMENT,
-                payload={
-                    "body": _TRIAGE_COMMENT.format(
-                        summary=summary,
-                        type=triage_type,
-                        priority=priority,
-                        component=component,
-                    )
-                },
-                reason="Post triage summary",
-            )
+        severity = _PRIORITY_SEVERITY.get(priority, "info")
+        comment_body = (
+            f"{summary}\n\n"
+            f"- **Type:** {triage_type}\n"
+            f"- **Priority:** {priority}\n"
+            f"- **Component:** {component}"
         )
+        issue_comments = [
+            IssueComment(
+                title="Issue Triage",
+                body=comment_body,
+                severity=severity,
+            )
+        ]
 
         finding = Finding(summary=f"Triage: {triage_type}, priority {priority}", detail=summary)
-        return AgentResult(findings=[finding], proposed_actions=proposed_actions)
+        return AgentResult(
+            findings=[finding],
+            issue_comments=issue_comments,
+            proposed_actions=proposed_actions,
+        )
