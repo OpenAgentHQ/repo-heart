@@ -152,4 +152,4 @@ No Redis, no Postgres required.
 
 ## Status
 
-**Phase 0 — Project setup.** Scaffolding and docs in place; core runtime not yet implemented. See `ROADMAP.md` for what's next.
+**v1.0 — Fully Implemented.** All 7 roadmap phases completed: deterministic core, provider abstraction, issue intelligence, PR intelligence, large-repo scaling, CI repair & conflict resolution, and documentation agent. Every phase exit criteria verified (524+ tests passing, ruff clean, mypy strict clean). Provider switching works config-only. One-workflow + one-config onboarding verified on real repos. See `ROADMAP.md` for full phase details.

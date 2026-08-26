@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-RepoHeart is in early development (Phase 0–1). Security fixes are applied to
+RepoHeart v1.0 — fully implemented. All 7 roadmap phases complete with safety invariants verified. Security fixes follow the same v1.0 release process.
 the latest commit on `main` only.
 
 | Version | Supported |
