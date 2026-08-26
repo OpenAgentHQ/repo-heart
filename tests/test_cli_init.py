@@ -74,3 +74,29 @@ def test_run_subcommand_missing_event_exits_one() -> None:
     with _patch.dict("os.environ", _CLEAN, clear=False):
         code, _ = _run("run", "--config", "repoheart.yml")
     assert code == 1
+
+
+def test_generated_workflow_has_per_agent_matrix(tmp_path: Path) -> None:
+    """`repoheart init` must ship the plan -> matrix -> summary workflow.
+
+    New installs should get per-agent job visibility, not the old single
+    opaque `repoheart` job.
+    """
+    code, _ = _run("init", "--yes", "--output-dir", str(tmp_path))
+    assert code == 0
+    text = (tmp_path / ".github" / "workflows" / "repoheart.yml").read_text(encoding="utf-8")
+    assert "jobs:" in text
+    assert "  plan:" in text
+    assert "  agents:" in text
+    assert "  summary:" in text
+    assert "command: plan" in text
+    assert "agent: ${{ matrix.agent.id }}" in text
+    assert "GITHUB_STEP_SUMMARY" in text
+
+
+def test_generated_workflow_matches_repo_dogfood_workflow() -> None:
+    """The init template must not drift from the repo's own workflow file."""
+    from repoheart.cli.templates import render_workflow
+
+    repo_workflow = Path(".github/workflows/repoheart.yml").read_text(encoding="utf-8")
+    assert render_workflow() == repo_workflow
