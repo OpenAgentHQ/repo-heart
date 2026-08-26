@@ -8,7 +8,32 @@
 
 A 24/7, event-driven, multi-agent system that watches your repo and automatically activates specialized AI agents to triage issues, review PRs, repair CI, resolve conflicts, and keep the repository healthy — safely, and provider-agnostically.
 
+[![PyPI version](https://img.shields.io/pypi/v/repoheart?color=crimson&label=PyPI)](https://pypi.org/project/repoheart/)
+[![Python](https://img.shields.io/pypi/pyversions/repoheart)](https://pypi.org/project/repoheart/)
+[![License](https://img.shields.io/github/license/OpenAgentHQ/repo-heart)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/OpenAgentHQ/repo-heart/ci.yml?label=CI)](https://github.com/OpenAgentHQ/repo-heart/actions/workflows/ci.yml)
+
 </div>
+
+---
+
+## Install
+
+```bash
+pip install repoheart
+```
+
+Use `repoheart init` to generate all required config files in one command:
+
+```bash
+repoheart init
+```
+
+This interactively creates `repoheart.yml` and `.github/workflows/repoheart.yml` in your repository. Pass `--yes` for non-interactive (CI-safe) mode:
+
+```bash
+repoheart init --provider claude --model claude-sonnet-4-6 --yes
+```
 
 ---
 
@@ -34,6 +59,18 @@ Deterministic where it must be (routing, permissions, idempotency), AI-driven wh
 ---
 
 ## Quick Start
+
+**Option A — zero-copy (recommended):**
+
+```bash
+pip install repoheart
+cd your-repo
+repoheart init
+```
+
+`repoheart init` generates both files below interactively and prints the next steps.
+
+**Option B — manual:**
 
 **1. Add the workflow** — `.github/workflows/repoheart.yml`:
 
