@@ -8,10 +8,13 @@ from __future__ import annotations
 from pathlib import Path
 
 # The generated workflow gives per-agent visibility in the Actions UI: a
-# `plan` job (real routing table) sizes a matrix with one job per registered
-# agent — agents not selected for the event render as native GitHub Actions
-# "Skipped" — followed by a `summary` job that renders a status table to
-# $GITHUB_STEP_SUMMARY and fails only when a blocking agent actually failed.
+# `plan` job (real routing table) sizes a matrix with one job per activated
+# agent, followed by a `summary` job that renders a status table (including
+# agents NOT activated for the event) to $GITHUB_STEP_SUMMARY and fails only
+# when a blocking agent actually failed. GitHub Actions job-level `if:`
+# cannot read the `matrix` context, so a fixed-size matrix with per-entry
+# skip icons isn't possible platform-side; inactive agents are instead
+# listed explicitly in the summary table rather than as their own job row.
 #
 # Kept as a single f-string-free, plain string (no ``.format``/f-string) so
 # the many literal ``${{ }}`` GitHub Actions expressions and the embedded
@@ -65,15 +68,15 @@ env:
 jobs:
   # Computes, per this event, which of RepoHeart's agents actually apply —
   # via the real routing table (repoheart/events/router.py), not a
-  # hand-maintained copy of it. Every registered agent is included (not just
-  # activated ones) so the matrix below can render the rest as native
-  # GitHub Actions "Skipped" jobs.
+  # hand-maintained copy of it. Outputs both the full registered-agent list
+  # (activated + inactive, for the summary table) and the activated-only
+  # subset (for the agent matrix below).
   plan:
     name: 🔎 Event Detection & Agent Planning
     runs-on: ubuntu-latest
     outputs:
       agents: ${{ steps.plan.outputs.agents }}
-      agent_ids: ${{ steps.plan.outputs.agent_ids }}
+      active_agents: ${{ steps.plan.outputs.active_agents }}
       event: ${{ steps.plan.outputs.event }}
     steps:
       - name: Checkout repository
@@ -96,18 +99,19 @@ jobs:
           with open(".repoheart/plan.json") as f:
               plan = json.load(f)
 
+          active_agents = [a for a in plan["agents"] if a["activated"]]
+
           gh_out = os.environ["GITHUB_OUTPUT"]
           with open(gh_out, "a") as out:
               out.write(f"agents={json.dumps(plan['agents'])}\\n")
-              out.write(f"agent_ids={json.dumps(plan['agent_ids'])}\\n")
+              out.write(f"active_agents={json.dumps(active_agents)}\\n")
               out.write(f"event={plan['event']}\\n")
 
           gh_summary = os.environ.get("GITHUB_STEP_SUMMARY")
           if gh_summary:
               with open(gh_summary, "a") as s:
                   s.write(f"# ❤️ RepoHeart Execution\\n\\n## Event\\n\\n`{plan['event']}`\\n\\n")
-                  activated = [a for a in plan["agents"] if a["activated"]]
-                  names = ", ".join(a["label"] for a in activated) or "none"
+                  names = ", ".join(a["label"] for a in active_agents) or "none"
                   s.write(f"**Activated agents:** {names}\\n")
           PY
 
@@ -118,9 +122,15 @@ jobs:
           path: .repoheart/plan.json
           retention-days: 7
 
-  # One job template, run once per registered agent via the matrix. Agents
-  # not selected for this event (per `plan`) render as native GitHub Actions
-  # "Skipped" — that's the built-in ⏭️ semantics, not a custom status we fake.
+  # One job template, run once per ACTIVATED agent via the matrix — each
+  # still its own named job with a real pass/fail. GitHub Actions job-level
+  # `if:` cannot read the `matrix` context (only `steps.if` can), so a matrix
+  # built from every registered agent with a per-entry `if:` isn't possible;
+  # the closest clean equivalent is matrixing only over what `plan` already
+  # determined is activated, and guarding the whole job with a `needs`-only
+  # condition for the "nothing activated" case. Agents NOT activated for this
+  # event don't get their own sidebar job row (a real Actions limitation) —
+  # they're listed instead, explicitly, in the `summary` job's table below.
   #
   # A single matrix (rather than separate issue/PR/CI matrices) is used
   # deliberately: several agents span more than one category in the real
@@ -132,12 +142,12 @@ jobs:
   agents:
     name: ${{ matrix.agent.emoji }} ${{ matrix.agent.label }}
     needs: plan
-    if: ${{ contains(fromJSON(needs.plan.outputs.agent_ids), matrix.agent.id) }}
+    if: ${{ needs.plan.outputs.active_agents != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        agent: ${{ fromJSON(needs.plan.outputs.agents) }}
+        agent: ${{ fromJSON(needs.plan.outputs.active_agents) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
