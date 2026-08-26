@@ -38,7 +38,7 @@ on:
   push:
 
   workflow_run:
-    workflows: ["*"]
+    workflows: ["CI"]
     types: [completed]
 
   release:
