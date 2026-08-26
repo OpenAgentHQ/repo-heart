@@ -148,7 +148,7 @@ RepoHeart doesn't load your whole codebase into a prompt. It **retrieves** only 
 
 ## Status
 
-**Early development (Phase 0–1).** Architecture and docs are locked; core runtime is being built. See [ROADMAP.md](ROADMAP.md).
+**v1.0 — Fully Implemented.** All 7 roadmap phases complete: deterministic core, provider abstraction, issue intelligence, PR intelligence, large-repo scaling, CI repair & conflict resolution, and documentation agent. 524+ tests passing, `ruff` clean, `mypy strict` clean, provider switching config-only. One-workflow + one-config onboarding verified on real repos. See [ROADMAP.md](ROADMAP.md) for full details.
 
 ---
 

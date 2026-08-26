@@ -41,7 +41,7 @@ Before filing a bug report:
 
 1. Search open and closed issues for a duplicate.
 2. Check the [ROADMAP.md](ROADMAP.md) — the behavior may be intentionally
-   not yet implemented (RepoHeart is in Phase 0–1).
+   v1.0 implemented. All 7 roadmap phases complete. See ROADMAP.md for full details.
 3. Reproduce the issue on the latest `main` commit.
 
 When filing, use the Bug Report template and include:
@@ -72,12 +72,14 @@ A: No. RepoHeart runs entirely inside your own GitHub Actions workflow. No
 hosted server, no database, no external infrastructure required.
 
 **Q: Which AI providers are supported?**  
-A: OpenCode, Claude (Anthropic), and OpenAI are planned for Phase 2. The
-provider interface is designed so adding new providers is straightforward.
+A: OpenCode, Claude (Anthropic), and OpenAI are supported config-only (switching
+providers is a one-line change in `opencode.yml`). The provider interface is
+designed so adding new providers is straightforward.
 
 **Q: Is RepoHeart production-ready?**  
-A: Not yet. It is in Phase 0–1 (project setup and deterministic core). See
-[ROADMAP.md](ROADMAP.md) for the current status and exit criteria for each phase.
+A: Yes — v1.0 is fully implemented. All 7 roadmap phases are complete with
+exit criteria verified (524+ tests passing, ruff clean, mypy strict clean).
+See [ROADMAP.md](ROADMAP.md) for full phase details.
 
 **Q: Can I run RepoHeart on a private repository?**  
 A: Yes. RepoHeart uses the standard `GITHUB_TOKEN` provided by Actions and
