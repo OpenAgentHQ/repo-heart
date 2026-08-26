@@ -9,6 +9,17 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.8.2] - 2026-08-26
+
+### Fixed
+
+- Corrected OpenCode provider base URL to point to the real Zen API host
+- Fixed Docker smoke test command for `ENTRYPOINT` compatibility
+- Lowercased GHCR image references to fix invalid reference format in Docker
+  publish workflow and action metadata
+
+---
+
 ## [0.8.1] - 2026-08-26
 
 ### Fixed
@@ -464,7 +475,8 @@ This project follows [Semantic Versioning](https://semver.org/):
 
 ## Links
 
-[Unreleased]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.8.2...HEAD
+[0.8.2]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/OpenAgentHQ/repo-heart/compare/v0.6.0...v0.7.0
