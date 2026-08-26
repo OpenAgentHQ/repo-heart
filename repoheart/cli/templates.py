@@ -7,6 +7,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
+# Stored as a plain string (not format-escaped) so it can be inserted verbatim
+# via the {concurrency_group} placeholder without hitting the 100-char line limit.
+_CONCURRENCY_GROUP = (
+    "  group: repoheart-"
+    "${{ github.event.issue.number"
+    " || github.event.pull_request.number"
+    " || github.ref }}"
+)
+
 _WORKFLOW_TEMPLATE = """\
 name: RepoHeart
 
@@ -40,7 +49,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: repoheart-${{{{ github.event.issue.number || github.event.pull_request.number || github.ref }}}}
+{concurrency_group}
   cancel-in-progress: false
 
 jobs:
@@ -69,7 +78,7 @@ jobs:
 
 def render_workflow() -> str:
     """Return the GitHub Actions workflow YAML string."""
-    return _WORKFLOW_TEMPLATE.format()
+    return _WORKFLOW_TEMPLATE.format(concurrency_group=_CONCURRENCY_GROUP)
 
 
 def render_config(

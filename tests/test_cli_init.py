@@ -6,8 +6,6 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from repoheart.main import main
 
 
