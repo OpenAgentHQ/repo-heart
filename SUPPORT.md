@@ -20,7 +20,7 @@ Start here before opening an issue:
 
 ### GitHub Discussions
 
-Use [GitHub Discussions](https://github.com/OpenAgentHQ/repoheart/discussions) for:
+Use [GitHub Discussions](https://github.com/OpenAgentHQ/repo-heart/discussions) for:
 - Questions about configuration (`repoheart.yml`, agent setup)
 - Questions about how RepoHeart works
 - Ideas and proposals before filing a feature request
@@ -28,7 +28,7 @@ Use [GitHub Discussions](https://github.com/OpenAgentHQ/repoheart/discussions) f
 
 ### GitHub Issues
 
-Use [GitHub Issues](https://github.com/OpenAgentHQ/repoheart/issues) for:
+Use [GitHub Issues](https://github.com/OpenAgentHQ/repo-heart/issues) for:
 - Bug reports (use the Bug Report template)
 - Feature requests (use the Feature Request template)
 - Architecture discussions (open before writing code that might conflict with invariants)

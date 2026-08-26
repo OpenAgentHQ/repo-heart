@@ -63,7 +63,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run RepoHeart
-        uses: OpenAgentHQ/repoheart@main
+        uses: OpenAgentHQ/repo-heart@main
         with:
           config: repoheart.yml
         env:

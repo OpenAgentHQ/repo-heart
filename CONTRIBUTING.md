@@ -11,8 +11,8 @@ Before writing code, read **`CLAUDE.md`** (the architecture invariants apply to 
 Requirements: Python 3.11+, Git.
 
 ```bash
-git clone https://github.com/OpenAgentHQ/repoheart.git
-cd repoheart
+git clone https://github.com/OpenAgentHQ/repo-heart.git
+cd repo-heart
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 ```

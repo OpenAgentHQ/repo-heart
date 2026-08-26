@@ -41,7 +41,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/openagentHQ/repoheart
+          images: ghcr.io/OpenAgentHQ/repo-heart
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}

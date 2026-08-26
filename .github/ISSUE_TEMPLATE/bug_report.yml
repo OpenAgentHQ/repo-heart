@@ -79,7 +79,7 @@ body:
     id: version
     attributes:
       label: RepoHeart Version / Commit
-      description: The git SHA or tag you're running (`uses: OpenAgentHQ/repoheart@<ref>`).
+      description: The git SHA or tag you're running (`uses: OpenAgentHQ/repo-heart@<ref>`).
     validations:
       required: true
 

@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: OpenAgentHQ/repoheart@main
+      - uses: OpenAgentHQ/repo-heart@main
         with:
           config: repoheart.yml
 ```

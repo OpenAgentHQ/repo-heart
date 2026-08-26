@@ -90,6 +90,6 @@ def run_init(args: argparse.Namespace) -> int:
         print("  2. Open an issue to verify RepoHeart responds")
 
     print(
-        "\nDocs: https://github.com/OpenAgentHQ/repoheart/blob/main/docs/quickstart.md"
+        "\nDocs: https://github.com/OpenAgentHQ/repo-heart/blob/main/docs/quickstart.md"
     )
     return 0

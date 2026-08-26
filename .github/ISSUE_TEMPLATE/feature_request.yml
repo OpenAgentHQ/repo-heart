@@ -8,7 +8,7 @@ body:
         Before filing, please:
         - Check [ROADMAP.md](../blob/main/ROADMAP.md) — your feature may already be planned.
         - Read [CLAUDE.md](../blob/main/CLAUDE.md) — the architecture invariants apply to requested features. Features requiring a database, direct agent writes, or a MERGE action will be declined.
-        - Open a [Discussion](https://github.com/OpenAgentHQ/repoheart/discussions) first for large proposals.
+        - Open a [Discussion](https://github.com/OpenAgentHQ/repo-heart/discussions) first for large proposals.
 
   - type: dropdown
     id: category
