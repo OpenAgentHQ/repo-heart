@@ -75,6 +75,16 @@ class GitRepo:
         result = self._run("rev-parse", ref)
         return result.stdout.strip()
 
+    def commits_between(self, base: str, head: str) -> list[str]:
+        """Return one-line commit messages between ``base`` and ``head``.
+
+        Excludes ``base`` itself (exclusive lower bound, inclusive upper bound),
+        matching the behaviour of ``git log base..head``.
+        """
+        result = self._run("log", "--oneline", f"{base}..{head}")
+        lines = result.stdout.strip().splitlines()
+        return [line for line in lines if line]
+
     def _run(self, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
         """Run a git command inside ``repo_path``.
 

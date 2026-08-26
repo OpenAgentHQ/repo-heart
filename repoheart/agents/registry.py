@@ -11,10 +11,10 @@ from repoheart.agents.base import Agent
 from repoheart.agents.ci_repair import CIRepairAgent
 from repoheart.agents.code_quality import CodeQualityAgent
 from repoheart.agents.conflict_resolution import ConflictResolutionAgent
+from repoheart.agents.documentation import DocumentationAgent
 from repoheart.agents.duplicate_detection import DuplicateDetectionAgent
 from repoheart.agents.issue_resolution import IssueResolutionAgent
 from repoheart.agents.issue_triage import IssueTriageAgent
-from repoheart.agents.noop import NoOpAgent
 from repoheart.agents.pr_review import PRReviewAgent
 from repoheart.agents.security import SecurityAgent
 from repoheart.agents.test_agent import TestCoverageAgent
@@ -29,5 +29,5 @@ AGENT_REGISTRY: dict[str, type[Agent]] = {
     "ci_repair": CIRepairAgent,
     "conflict_resolution": ConflictResolutionAgent,
     "test": TestCoverageAgent,
-    "documentation": NoOpAgent,
+    "documentation": DocumentationAgent,
 }
