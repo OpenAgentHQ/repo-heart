@@ -32,7 +32,7 @@
               "type": "object",
               "additionalProperties": {
                 "type": "string",
-                "enum": ["opencode", "claude", "openai", "gemini", "local"]
+                "enum": ["opencode", "claude", "openai", "openrouter", "gemini", "local"]
               }
             }
           }

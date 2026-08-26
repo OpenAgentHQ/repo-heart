@@ -48,6 +48,10 @@ def build_provider(
             from repoheart.providers.openai import OpenAIProvider
 
             return OpenAIProvider(model, timeout=timeout)
+        case "openrouter":
+            from repoheart.providers.openrouter import OpenRouterProvider
+
+            return OpenRouterProvider(model, timeout=timeout)
         case "gemini":
             raise ProviderError("gemini provider is not yet implemented")
         case "local":

@@ -25,7 +25,7 @@ from repoheart.config.schema import (
     ScaleConfig,
 )
 
-_VALID_PROVIDERS = {"opencode", "claude", "openai", "gemini", "local"}
+_VALID_PROVIDERS = {"opencode", "claude", "openai", "openrouter", "gemini", "local"}
 _VALID_AUTOMATION_LEVELS = {"assist", "auto-safe", "auto"}
 _VALID_RISK_NAMES = {"SAFE", "LOW", "MEDIUM", "HIGH"}
 
