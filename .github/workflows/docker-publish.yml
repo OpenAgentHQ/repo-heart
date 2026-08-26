@@ -57,7 +57,7 @@ jobs:
           cache-from: type=gha
 
       - name: Smoke-test image
-        run: docker run --rm repoheart:smoke python -m repoheart.main --version
+        run: docker run --rm repoheart:smoke --version
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
