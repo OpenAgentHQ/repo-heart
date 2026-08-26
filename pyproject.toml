@@ -17,15 +17,19 @@ keywords = ["github", "actions", "agents", "automation", "ai", "code-review"]
 
 # Runtime dependencies are intentionally minimal for the MVP. Provider SDKs are
 # optional extras so the core stays provider-agnostic and light.
+# ruff, mypy, and detect-secrets are base dependencies (not dev-only extras):
+# the orchestrator shells out to them at runtime (_run_linters / _scan_secrets),
+# so the shipped image must have them on PATH.
 dependencies = [
     "pyyaml>=6.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "detect-secrets>=1.5",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
-    "ruff>=0.6",
-    "mypy>=1.11",
     "types-PyYAML>=6.0",
 ]
 # Provider SDKs live behind extras; none are required for the core to import.

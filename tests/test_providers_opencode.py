@@ -104,6 +104,27 @@ def test_provider_name() -> None:
     assert _provider().provider_name() == "opencode"
 
 
+def test_default_base_url_is_opencode_zen_host() -> None:
+    assert _provider()._base_url == "https://opencode.ai/zen/v1"
+
+
+def test_complete_calls_opencode_zen_chat_completions_url() -> None:
+    provider = _provider()
+    captured: list[str] = []
+
+    def fake_urlopen(req, timeout=None):
+        captured.append(req.full_url)
+        cm = MagicMock()
+        cm.__enter__ = lambda s: io.BytesIO(json.dumps(_opencode_response()).encode())
+        cm.__exit__ = MagicMock(return_value=False)
+        return cm
+
+    with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+        provider.complete(_req())
+
+    assert captured[0] == "https://opencode.ai/zen/v1/chat/completions"
+
+
 # ---------------------------------------------------------------------------
 # Error mapping
 # ---------------------------------------------------------------------------
