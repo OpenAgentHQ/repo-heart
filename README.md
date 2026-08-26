@@ -10,6 +10,7 @@ A 24/7, event-driven, multi-agent system that watches your repo and automaticall
 
 [![PyPI version](https://img.shields.io/pypi/v/repoheart?color=crimson&label=PyPI)](https://pypi.org/project/repoheart/)
 [![Python](https://img.shields.io/pypi/pyversions/repoheart)](https://pypi.org/project/repoheart/)
+[![Downloads](https://img.shields.io/pypi/dm/repoheart)](https://pypi.org/project/repoheart/)
 [![License](https://img.shields.io/github/license/OpenAgentHQ/repo-heart)](LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/OpenAgentHQ/repo-heart/ci.yml?label=CI)](https://github.com/OpenAgentHQ/repo-heart/actions/workflows/ci.yml)
 

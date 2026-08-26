@@ -15,6 +15,13 @@ authors = [
 ]
 keywords = ["github", "actions", "agents", "automation", "ai", "code-review"]
 
+[project.urls]
+Homepage = "https://github.com/OpenAgentHQ/repo-heart"
+Repository = "https://github.com/OpenAgentHQ/repo-heart"
+"Bug Tracker" = "https://github.com/OpenAgentHQ/repo-heart/issues"
+Changelog = "https://github.com/OpenAgentHQ/repo-heart/blob/main/CHANGELOG.md"
+PyPI = "https://pypi.org/project/repoheart/"
+
 # Runtime dependencies are intentionally minimal for the MVP. Provider SDKs are
 # optional extras so the core stays provider-agnostic and light.
 dependencies = [
