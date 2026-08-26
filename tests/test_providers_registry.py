@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from types import ModuleType
 from unittest.mock import MagicMock, patch
@@ -53,6 +54,14 @@ def _clear_provider_cache() -> None:
 def test_build_opencode_returns_instance() -> None:
     p = build_provider("opencode", "")
     assert isinstance(p, OpenCodeProvider)
+
+
+def test_build_openrouter_returns_instance() -> None:
+    from repoheart.providers.openrouter import OpenRouterProvider
+
+    with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
+        p = build_provider("openrouter", "")
+    assert isinstance(p, OpenRouterProvider)
 
 
 def test_build_unknown_raises_config_error() -> None:
