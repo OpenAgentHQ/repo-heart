@@ -69,6 +69,8 @@ def infer_event_name(payload: dict[str, Any]) -> str:
     Used only for local/test runs where ``GITHUB_EVENT_NAME`` is not set.
     The heuristic matches the most common payload shapes.
     """
+    if "comment" in payload and "issue" in payload:
+        return "issue_comment"
     if "issue" in payload:
         return "issues"
     if "pull_request" in payload:
