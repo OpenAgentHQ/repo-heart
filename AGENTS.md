@@ -257,7 +257,111 @@ Copy this into the PR and check every box:
 
 ---
 
-## 12. When to Stop and Ask
+## 13. Release Workflow
+
+Follow this sequence **in order** every time a version is shipped to PyPI. Do not skip steps.
+
+### Step 1 — Decide the version bump
+
+Follow [Semantic Versioning](https://semver.org/). Use the versioning rules in `CHANGELOG.md`:
+
+| Change type | Bump |
+|---|---|
+| Breaking change to `repoheart.yml` schema, `Agent` ABC, or `Provider` ABC | **MAJOR** |
+| New agent, provider, or backward-compatible feature | **MINOR** |
+| Bug fix or safe internal improvement | **PATCH** |
+
+### Step 2 — Update `pyproject.toml`
+
+Edit the `version` field:
+
+```toml
+[project]
+version = "X.Y.Z"   # new version, no leading v
+```
+
+### Step 3 — Update `CHANGELOG.md`
+
+`CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/) format.
+
+1. Replace `## [Unreleased]` with the new version heading:
+   ```markdown
+   ## [X.Y.Z] - YYYY-MM-DD
+   ```
+2. Add a fresh `## [Unreleased]` block above it (always keep this header):
+   ```markdown
+   ## [Unreleased]
+
+   ---
+
+   ## [X.Y.Z] - YYYY-MM-DD
+   ```
+3. Write release notes under `### Added`, `### Changed`, `### Fixed`, `### Removed`, `### Security` as applicable. Every user-visible change must appear.
+4. Update the diff links at the bottom of the file:
+   ```markdown
+   [Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/vX.Y.Z...HEAD
+   [X.Y.Z]: https://github.com/OpenAgentHQ/repoheart/compare/vPREV...vX.Y.Z
+   ```
+
+### Step 4 — Run the full test gate
+
+```bash
+ruff check .
+mypy repoheart
+pytest
+```
+
+All three must be green before committing.
+
+### Step 5 — Commit the release prep
+
+Use a single, focused commit. No other changes mixed in.
+
+```bash
+git add pyproject.toml CHANGELOG.md
+git commit -m "chore(release): bump version to vX.Y.Z"
+```
+
+### Step 6 — Create and push an annotated tag
+
+Tags must be annotated (not lightweight) and use the `vX.Y.Z` format.
+
+```bash
+git tag -a vX.Y.Z -m "Release vX.Y.Z"
+git push origin main
+git push origin vX.Y.Z
+```
+
+### Step 7 — Create and publish a GitHub Release
+
+> **This is the step that triggers the PyPI upload.** `publish.yml` fires on
+> `release: types: [published]` — only when a GitHub Release is published, not
+> on a raw tag push. Pushing a tag alone does **not** publish to PyPI.
+
+1. Go to **GitHub → Releases → Draft a new release**.
+2. Select the tag `vX.Y.Z` you just pushed.
+3. Set the title to `vX.Y.Z`.
+4. Paste the `CHANGELOG.md` section for this version into the description.
+5. Click **Publish release**.
+
+`publish.yml` will now run automatically:
+- `build` job: checks out the tag, builds wheel + sdist via `hatch build`
+- `publish` job: uploads `dist/` to PyPI via OIDC trusted publishing (no API token required)
+
+> **One-time PyPI setup** (if not already done): add a trusted publisher at
+> pypi.org → Your account → Publishing → Add a new pending publisher.
+> Set: project `repoheart`, owner `OpenAgentHQ`, repo `repo-heart`,
+> workflow `publish.yml`, environment `pypi`.
+
+### Step 8 — Verify the release
+
+- Check the **Actions** tab: both `build` and `publish` jobs must be green.
+- Confirm the new version is live: `pip install repoheart==X.Y.Z`
+- Test the installed CLI: `repoheart --version`
+
+---
+
+## 14. When to Stop and Ask
 
 Escalate to a human (comment on the issue/PR, don't guess) when:
 

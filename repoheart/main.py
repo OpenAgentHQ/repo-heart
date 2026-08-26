@@ -1,4 +1,4 @@
-"""RepoHeart entrypoint — Phase 1 full pipeline.
+"""RepoHeart entrypoint — full pipeline + init CLI.
 
 Wires config loading → event parsing → routing → orchestration → safety gate
 into a single, stateless run. No LLM calls are made in Phase 1; the orchestrator
@@ -15,6 +15,8 @@ from pathlib import Path
 from repoheart import __version__
 from repoheart.agents.registry import AGENT_REGISTRY
 from repoheart.cache import make_cache
+from repoheart.cli.init import run_init
+from repoheart.cli.providers import PROVIDERS
 from repoheart.config.loader import ConfigError, load_config
 from repoheart.events.context import EventLoadError, infer_event_name, load_event
 from repoheart.events.router import route
@@ -37,17 +39,67 @@ from repoheart.safety.gate import SafetyGate
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="repoheart")
-    parser.add_argument(
+    parser.add_argument("--version", action="store_true", help="Print version and exit.")
+
+    subparsers = parser.add_subparsers(dest="command")
+    subparsers.default = "run"
+
+    # --- run subcommand (existing pipeline) ---
+    run_p = subparsers.add_parser("run", help="Process a GitHub event (default).")
+    run_p.add_argument(
         "--event",
         help="Path to a GitHub event payload JSON. "
         "Defaults to $GITHUB_EVENT_PATH when unset.",
     )
-    parser.add_argument(
+    run_p.add_argument(
         "--config",
         default="repoheart.yml",
         help="Path to the repoheart.yml config file.",
     )
-    parser.add_argument("--version", action="store_true", help="Print version and exit.")
+
+    # --- init subcommand ---
+    init_p = subparsers.add_parser(
+        "init",
+        help="Generate repoheart.yml and .github/workflows/repoheart.yml.",
+    )
+    init_p.add_argument(
+        "--provider",
+        choices=list(PROVIDERS.keys()),
+        help="AI provider (skips interactive prompt).",
+    )
+    init_p.add_argument(
+        "--model",
+        help="Model identifier for the chosen provider.",
+    )
+    init_p.add_argument(
+        "--output-dir",
+        default=".",
+        help="Directory to write files into (default: current directory).",
+    )
+    init_p.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing files without prompting.",
+    )
+    init_p.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Non-interactive mode: accept all defaults.",
+    )
+
+    # Support legacy flat invocation: `repoheart --event X --config Y`
+    # by also accepting these flags at the top level when no subcommand given.
+    parser.add_argument(
+        "--event",
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--config",
+        default="repoheart.yml",
+        help=argparse.SUPPRESS,
+    )
+
     return parser.parse_args(argv)
 
 
@@ -59,8 +111,12 @@ def main(argv: list[str] | None = None) -> int:
         print(__version__)
         return 0
 
+    if args.command == "init":
+        return run_init(args)
+
+    # --- run pipeline ---
     # 1. Resolve event path
-    event_path = args.event or os.environ.get("GITHUB_EVENT_PATH")
+    event_path = getattr(args, "event", None) or os.environ.get("GITHUB_EVENT_PATH")
     log.log(
         event_msg="startup",
         version=__version__,
