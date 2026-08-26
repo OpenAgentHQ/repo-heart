@@ -280,7 +280,15 @@ Edit the `version` field:
 version = "X.Y.Z"   # new version, no leading v
 ```
 
-### Step 3 — Update `CHANGELOG.md`
+### Step 3 — Update `repoheart/__init__.py`
+
+Edit the `__version__` string so `repoheart --version` reports the correct release:
+
+```python
+__version__ = "X.Y.Z"   # must match pyproject.toml exactly
+```
+
+### Step 4 — Update `CHANGELOG.md`
 
 `CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/) format.
 
@@ -303,7 +311,7 @@ version = "X.Y.Z"   # new version, no leading v
    [X.Y.Z]: https://github.com/OpenAgentHQ/repo-heart/compare/vPREV...vX.Y.Z
    ```
 
-### Step 4 — Run the full test gate
+### Step 5 — Run the full test gate
 
 ```bash
 ruff check .
@@ -313,16 +321,16 @@ pytest
 
 All three must be green before committing.
 
-### Step 5 — Commit the release prep
+### Step 6 — Commit the release prep
 
 Use a single, focused commit. No other changes mixed in.
 
 ```bash
-git add pyproject.toml CHANGELOG.md
+git add pyproject.toml CHANGELOG.md repoheart/__init__.py
 git commit -m "chore(release): bump version to vX.Y.Z"
 ```
 
-### Step 6 — Create and push an annotated tag
+### Step 7 — Create and push an annotated tag
 
 Tags must be annotated (not lightweight) and use the `vX.Y.Z` format.
 
@@ -332,7 +340,7 @@ git push origin main
 git push origin vX.Y.Z
 ```
 
-### Step 7 — Create and publish a GitHub Release
+### Step 8 — Create and publish a GitHub Release
 
 > **This is the step that triggers the PyPI upload.** `publish.yml` fires on
 > `release: types: [published]` — only when a GitHub Release is published, not
@@ -353,7 +361,7 @@ git push origin vX.Y.Z
 > Set: project `repoheart`, owner `OpenAgentHQ`, repo `repo-heart`,
 > workflow `publish.yml`, environment `pypi`.
 
-### Step 8 — Verify the release
+### Step 9 — Verify the release
 
 - Check the **Actions** tab: both `build` and `publish` jobs must be green.
 - Confirm the new version is live: `pip install repoheart==X.Y.Z`
