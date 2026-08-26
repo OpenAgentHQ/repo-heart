@@ -10,7 +10,7 @@ repoheart:
   # Switch providers by changing `name` (and `model`). Agents are untouched.
   provider:
     name: opencode            # opencode | claude | openai | gemini | local
-    model: your-model
+    model: mimo-v2.5-free
 
   # Optional: override the provider for specific agents.
   # Anything not listed uses `provider` above.

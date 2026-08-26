@@ -103,18 +103,86 @@ jobs:
 **2. Configure** — `repoheart.yml`:
 
 ```yaml
+# repoheart.yml — RepoHeart configuration
+#
+# Only `provider` and at least one enabled agent are required.
+# Everything else has safe defaults.
+
 repoheart:
+
+  # ── AI provider ────────────────────────────────────────────────
+  # Switch providers by changing `name` (and `model`). Agents are untouched.
   provider:
-    name: opencode          # opencode | claude | openai | gemini | local
-    model: your-model
+    name: opencode            # opencode | claude | openai | gemini | local
+    model: mimo-v2.5-free
+
+  # Optional: override the provider for specific agents.
+  # Anything not listed uses `provider` above.
+  # providers:
+  #   agents:
+  #     issue_triage: claude
+  #     conflict_resolution: openai
+
+  # ── Agents ─────────────────────────────────────────────────────
+  # Enable only what you want. Disabled agents never run.
   agents:
-    issue_triage: true
-    duplicate_detection: true
-    pr_review: true
-    code_quality: true
-    security: true
-    ci_repair: true
-    conflict_resolution: true
+    issue_triage: true        # label and prioritize new issues
+    duplicate_detection: true # find duplicate/related issues
+    issue_resolution: true    # detect issues fixed by prior PRs
+    pr_review: true           # coherent PR review (correctness, quality, risk)
+    code_quality: true        # lint / format / type checks on changed paths
+    security: true            # secret + dependency scanning on the diff
+    ci_repair: true           # diagnose CI failures, attempt safe fixes
+    conflict_resolution: true # resolve safe merge conflicts, escalate the rest
+    test: true                # test-impact mapping and test generation
+    documentation: true       # keep docs current with changed public symbols
+
+    # Fine-grained options for the documentation agent (only read when documentation: true).
+    # documentation_config:
+    #   changelog_on_release: true    # draft release notes on release.published events
+    #   docstring_style: google       # google | numpy | sphinx
+
+  # ── Automation posture ─────────────────────────────────────────
+  automation:
+    # assist    → propose + comment, never modify code
+    # auto-safe → auto-apply SAFE/LOW actions, escalate the rest
+    # auto      → auto-apply up to MEDIUM, escalate HIGH
+    level: assist
+
+    # Risk levels that always require a human, regardless of `level`.
+    require_human_approval:
+      - HIGH
+      - MEDIUM
+
+  # ── Scaling (large repos) ──────────────────────────────────────
+  scale:
+    # event-scoped → sparse/shallow checkout per event (recommended)
+    # full         → full clone (small repos only)
+    checkout: event-scoped
+
+    retrieval:
+      semantic: false         # opt-in embeddings; needs a cache backend
+
+    cache:
+      backend: actions        # none | actions | branch | vector-store
+
+    # Hard ceilings per run — a runaway event can never exceed these.
+    limits:
+      max_llm_calls: 30
+      max_files_read: 200
+      max_runtime_seconds: 600
+
+  # ── Labels (optional) ──────────────────────────────────────────
+  # Customize the labels RepoHeart applies/reads. Defaults shown.
+  # labels:
+  #   triaged: "repoheart:triaged"
+  #   reviewed: "repoheart:reviewed"
+  #   needs_human: "repoheart:needs-human"
+
+  # ── CI behavior (optional) ─────────────────────────────────────
+  # ci:
+  #   watch_workflows: ["ci.yml", "tests.yml"]   # narrow which failures trigger CI Repair
+  #   max_fix_attempts: 2
 ```
 
 **3. Add provider credentials** as repository secrets (e.g. `OPENCODE_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`).
