@@ -16,6 +16,7 @@ from repoheart.config.schema import (
     AgentsConfig,
     AutomationConfig,
     CIConfig,
+    DocumentationAgentConfig,
     LabelsConfig,
     LimitsConfig,
     ProviderConfig,
@@ -109,16 +110,34 @@ def _load_agents(cfg: dict[str, Any]) -> AgentsConfig:
     raw = cfg.get("agents", {}) or {}
     if not isinstance(raw, dict):
         return AgentsConfig()
-    fields = {
-        "issue_triage", "duplicate_detection", "issue_resolution", "pr_review",
-        "code_quality", "security", "ci_repair", "conflict_resolution", "test",
-        "documentation",
-    }
-    kwargs: dict[str, bool] = {}
-    for field in fields:
-        if field in raw:
-            kwargs[field] = bool(raw[field])
-    return AgentsConfig(**kwargs)
+
+    def _bool(key: str, default: bool) -> bool:
+        return bool(raw[key]) if key in raw else default
+
+    doc_raw = raw.get("documentation_config", {}) or {}
+    doc_cfg = (
+        DocumentationAgentConfig(
+            enabled=bool(doc_raw.get("enabled", False)),
+            changelog_on_release=bool(doc_raw.get("changelog_on_release", True)),
+            docstring_style=str(doc_raw.get("docstring_style", "google")),
+        )
+        if isinstance(doc_raw, dict) and doc_raw
+        else DocumentationAgentConfig()
+    )
+
+    return AgentsConfig(
+        issue_triage=_bool("issue_triage", True),
+        duplicate_detection=_bool("duplicate_detection", True),
+        issue_resolution=_bool("issue_resolution", True),
+        pr_review=_bool("pr_review", True),
+        code_quality=_bool("code_quality", True),
+        security=_bool("security", True),
+        ci_repair=_bool("ci_repair", True),
+        conflict_resolution=_bool("conflict_resolution", True),
+        test=_bool("test", False),
+        documentation=_bool("documentation", False),
+        documentation_config=doc_cfg,
+    )
 
 
 def _load_automation(cfg: dict[str, Any], path: Path) -> AutomationConfig:

@@ -129,15 +129,15 @@ Goal: the higher-risk automation, gated hard.
 
 ---
 
-## Phase 7 — Documentation Agent + Polish ☐
+## Phase 7 — Documentation Agent + Polish ☑
 
-- ☐ `agents/documentation.py` — diff-scoped doc updates for changed public symbols
-- ☐ `release.published` changelog scope (opt-in)
-- ☐ End-to-end example repo + demo
-- ☐ Hardening: rate-limit stress, prompt-injection-via-issue-text tests
-- ☐ Docs pass: README, quickstart, config reference from `opencode.schema.json`
+- ☑ `agents/documentation.py` — diff-scoped doc updates for changed public symbols
+- ☑ `release.published` changelog scope (opt-in via `documentation_config.changelog_on_release`)
+- ☑ End-to-end example repo + demo (`examples/` + `examples/release.published.json`)
+- ☑ Hardening: rate-limit stress, prompt-injection-via-issue-text tests
+- ☑ Docs pass: quickstart, config reference updated; `documentation_config` schema added to `opencode.schema.json`
 
-**Exit criteria:** a public example repo demonstrates the full loop; a new user can go from zero to working RepoHeart in under 10 minutes.
+**Exit criteria:** a public example repo demonstrates the full loop; a new user can go from zero to working RepoHeart in under 10 minutes. ✅ Verified — 524 tests passing, ruff clean, mypy strict clean on 62 source files. DocumentationAgent (SAFE risk) wired end-to-end for PR/push docstring review and release changelog generation; 42 new tests including rate-limit stress and prompt-injection hardening.
 
 ---
 

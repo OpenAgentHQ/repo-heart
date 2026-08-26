@@ -97,7 +97,7 @@ repoheart:
     ci_repair: true
     conflict_resolution: true
     test: false
-    documentation: false
+    documentation: false        # set to true to enable docstring suggestions + release changelogs
 
   automation:
     # assist    → propose + comment, never modify code
@@ -128,11 +128,26 @@ Go to **Settings → Secrets and variables → Actions → New repository secret
 
 You only need to set the secret for the provider you're actually using; the workflow above wires up all four env vars, but unset ones just resolve empty and are ignored.
 
-## 4. Open a test issue
+## 4. (Optional) Enable the documentation agent
+
+To get docstring suggestions on PRs and changelog drafts on releases, add to your `opencode.yml`:
+
+```yaml
+repoheart:
+  agents:
+    documentation: true
+    documentation_config:
+      changelog_on_release: true   # draft release notes on release.published
+      docstring_style: google      # google | numpy | sphinx
+```
+
+The documentation agent is off by default because it produces informational suggestions, not corrections — enable it once the other agents are tuned to your liking.
+
+## 5. Open a test issue
 
 Commit and push both files to `main`, then open a new issue in the repository — any title and body will do.
 
-Within a minute or two, you should see:
+Within a minute or two you should see:
 
 - A new run appear under the **Actions** tab, named `RepoHeart`.
 - A comment or label added to the issue by RepoHeart (issue triage runs on `issues: opened` by default).

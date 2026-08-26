@@ -9,6 +9,84 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.7.0] - 2026-08-26
+
+Phase 7 — Documentation Agent & Polish. The final MVP phase: a real
+`DocumentationAgent` replaces the last `NoOpAgent` placeholder, hardening
+tests cover rate-limit stress and prompt-injection attack surfaces, and the
+example repo + docs are updated for a sub-10-minute onboarding experience.
+
+### Added
+
+- `repoheart/agents/documentation.py` — `DocumentationAgent` (`risk_level = SAFE`);
+  two dispatch modes selected by `event.routing_key`:
+  - **PR / push mode** (`pull_request.*`, `push`): parses the unified diff for
+    newly added public Python symbols (`def`/`class` on `+` lines, skipping
+    private `_name` prefixes); sends symbol list + diff excerpt to the LLM asking
+    for missing or stale docstrings; returns `ReviewComment` objects for PR events
+    and `IssueComment` objects for push events, both scoped only to changed symbols
+  - **Release mode** (`release.published`): reads `tag_name` from the event
+    payload; calls `commits_between(prev_tag, tag_name)` to collect commit messages
+    since the previous tag; asks the LLM to produce a Keep-a-Changelog draft grouped
+    under `Added / Changed / Fixed / Removed / Security`; returns a single
+    `IssueComment` with the draft marked as "edit before publishing"; opt-out via
+    `documentation_config.changelog_on_release: false`
+- `repoheart/git_ops/repo.py` — `commits_between(base, head) → list[str]`:
+  runs `git log --oneline base..head`; exclusive lower bound, inclusive upper
+- `repoheart/config/schema.py` — `DocumentationAgentConfig` frozen dataclass:
+  `enabled: bool = False`, `changelog_on_release: bool = True`,
+  `docstring_style: str = "google"` (`"google" | "numpy" | "sphinx"`)
+- `repoheart/config/loader.py` — explicit `_load_agents()` now maps each boolean
+  field directly (typed, no `**kwargs`); reads optional `documentation_config`
+  YAML block into `DocumentationAgentConfig`
+- `opencode.schema.json` — `documentation_config` object added under `agents`:
+  `changelog_on_release` (boolean, default `true`) and `docstring_style` (enum)
+- `examples/release.published.json` — sample `release.published` payload used by
+  the integration smoke-test parametrization
+- `tests/test_documentation_agent.py` — 18 unit tests:
+  `_extract_changed_symbols` (public vs private vs non-Python),
+  PR mode (review comments, empty diff, no public symbols, empty LLM response,
+  provider error, bad JSON), push mode (issue comments), release mode
+  (happy path, missing tag, opt-out flag, provider error), no-provider guard,
+  risk ceiling via `validate_ceiling()`, registry wiring assertion
+- `tests/test_rate_limit_stress.py` — 14 hardening tests:
+  token-bucket starts full, decrements on acquire, header sync, bad-header
+  tolerance, `used` counter; `RunBudget` raises on LLM-calls ceiling;
+  `_BudgetedProvider` blocks inner call at ceiling; `_retry_with_backoff`
+  succeeds after transient `ProviderRateLimitError`, raises after max retries,
+  does not swallow non-transient errors; files-read ceiling and remaining counter;
+  runtime ceiling; runtime ok within limit
+- `tests/test_prompt_injection.py` — 9 prompt-injection hardening tests across
+  three agents:
+  `IssueTriageAgent` — injected title/body stays within `SAFE` ceiling, no
+  `PUSH_BRANCH`/`COMMIT` proposed, label names contain no shell chars or
+  `DELETE`/`PUSH` fragments;
+  `PRReviewAgent` — injected diff/body stays within `SAFE` ceiling, no write
+  kinds, bogus severity string does not escalate to an action;
+  `DocumentationAgent` — injected release body produces no write actions, body
+  stored as plain string; `IssueTriageAgent` — extra `proposed_action` JSON key
+  is silently ignored by the parser
+
+### Changed
+
+- `repoheart/agents/registry.py` — `"documentation"` entry updated from
+  `NoOpAgent` to `DocumentationAgent`; `NoOpAgent` import removed (now unused)
+- `opencode.yml` — `documentation: true` (enabled in the reference config so the
+  smoke-test `release.published` payload routes to an active agent); new
+  `documentation_config` commented block documents available options
+- `docs/configuration.md` — `agents.documentation` description updated to
+  mention both modes; new `agents.documentation_config` subsection with field
+  table and YAML example
+- `docs/quickstart.md` — new step 4 "Enable the documentation agent" with a
+  minimal `documentation_config` snippet; existing step 4 renumbered to 5
+
+### Tests
+
+- 42 new tests, **524 tests total** (up from 482 at Phase 6 exit); all passing
+- ruff clean, mypy strict clean on 62 source files
+
+---
+
 ## [0.6.0] - 2026-08-26
 
 Phase 6 — CI Repair & Conflict Resolution. The higher-risk automation tier,
@@ -332,7 +410,8 @@ This project follows [Semantic Versioning](https://semver.org/):
 
 ## Links
 
-[Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.3.0...v0.4.0

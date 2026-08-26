@@ -50,7 +50,25 @@
             "ci_repair": { "type": "boolean" },
             "conflict_resolution": { "type": "boolean" },
             "test": { "type": "boolean" },
-            "documentation": { "type": "boolean" }
+            "documentation": { "type": "boolean" },
+            "documentation_config": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Fine-grained options for the documentation agent.",
+              "properties": {
+                "changelog_on_release": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "When true, draft release notes on release.published events."
+                },
+                "docstring_style": {
+                  "type": "string",
+                  "enum": ["google", "numpy", "sphinx"],
+                  "default": "google",
+                  "description": "Docstring convention used when suggesting new docstrings."
+                }
+              }
+            }
           }
         },
         "automation": {

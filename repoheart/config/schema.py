@@ -23,6 +23,15 @@ class ProvidersConfig:
 
 
 @dataclass(frozen=True)
+class DocumentationAgentConfig:
+    """Fine-grained config for the documentation agent."""
+
+    enabled: bool = False
+    changelog_on_release: bool = True
+    docstring_style: str = "google"  # "google" | "numpy" | "sphinx"
+
+
+@dataclass(frozen=True)
 class AgentsConfig:
     issue_triage: bool = True
     duplicate_detection: bool = True
@@ -34,6 +43,9 @@ class AgentsConfig:
     conflict_resolution: bool = True
     test: bool = False
     documentation: bool = False
+    documentation_config: DocumentationAgentConfig = field(
+        default_factory=DocumentationAgentConfig
+    )
 
     def is_enabled(self, agent_name: str) -> bool:
         """Return True if the named agent is enabled in config."""

@@ -31,7 +31,12 @@ repoheart:
     ci_repair: true
     conflict_resolution: true
     test: false
-    documentation: false
+    documentation: true
+
+    # Fine-grained options for the documentation agent (only read when documentation: true).
+    # documentation_config:
+    #   changelog_on_release: true    # draft release notes on release.published events
+    #   docstring_style: google       # google | numpy | sphinx
 
   # ── Automation posture ─────────────────────────────────────────
   automation:

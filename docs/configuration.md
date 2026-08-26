@@ -74,7 +74,7 @@ Boolean toggle per agent. A disabled agent never runs — RepoHeart won't log an
 | `ci_repair`            | boolean | `true`  | Attempts to fix failing CI runs (driven by `workflow_run` events — see `ci` below). |
 | `conflict_resolution`  | boolean | `true`  | Proposes merge-conflict resolutions. Never auto-picks `ours`/`theirs`; low-confidence cases always escalate (see Safety Gate section). |
 | `test`                 | boolean | `false` | Proposes or updates tests. Off by default. |
-| `documentation`        | boolean | `false` | Proposes or updates documentation. Off by default. |
+| `documentation`        | boolean | `false` | Suggests docstring improvements on changed symbols (PR/push events) and drafts release changelogs (`release.published`). Off by default — see `documentation_config` below for fine-grained options. |
 
 ```yaml
 repoheart:
@@ -92,6 +92,24 @@ repoheart:
 ```
 
 Only fields explicitly present in your YAML override the default — omit a field entirely and it takes the default listed above, it does not become `false`.
+
+### `agents.documentation_config`
+
+Fine-grained options for the documentation agent (only evaluated when `documentation: true`).
+
+| Field                  | Type                                    | Default  | Description |
+|------------------------|-----------------------------------------|----------|-------------|
+| `changelog_on_release` | boolean                                 | `true`   | When `true`, the documentation agent reacts to `release.published` events and posts a Keep-a-Changelog draft as a comment. Set to `false` if you manage release notes manually. |
+| `docstring_style`      | string (`google` \| `numpy` \| `sphinx`) | `google` | Docstring convention the agent uses when suggesting new docstrings. |
+
+```yaml
+repoheart:
+  agents:
+    documentation: true
+    documentation_config:
+      changelog_on_release: true
+      docstring_style: google
+```
 
 ---
 
