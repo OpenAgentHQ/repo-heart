@@ -9,6 +9,48 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.8.0] - 2026-08-26
+
+Phase 8 — PyPI Distribution & Zero-Copy Onboarding. First public PyPI release.
+`repoheart init` generates all required config in one command; automated PyPI
+publishing is gated behind GitHub Releases via OIDC trusted publishing.
+
+### Added
+
+- `repoheart init` CLI subcommand — interactive (or `--yes` non-interactive) wizard
+  that generates `repoheart.yml` and `.github/workflows/repoheart.yml` in one shot;
+  supports `--provider`, `--model`, `--output-dir`, `--force` flags for CI use
+- `repoheart/cli/` package — split into four focused modules:
+  `providers.py` (provider registry + default models), `agents.py` (agent registry
+  + descriptions), `templates.py` (YAML renderers + file writer),
+  `init.py` (orchestrator only); adding a new provider or agent requires editing
+  exactly one file
+- Agent descriptions rendered as inline YAML comments in generated `repoheart.yml`
+  (e.g. `issue_triage: true  # label and prioritize new issues`)
+- Provider selection prompt shows the default model name alongside each option
+- `.github/workflows/publish.yml` — OIDC trusted publishing to PyPI; triggers only
+  on published GitHub Releases (`release: types: [published]`); per-job permission
+  scoping (`id-token: write` on `publish` job only); `fetch-depth: 0` for correct
+  Hatch versioning
+- `AGENTS.md` §13 Release Workflow — step-by-step release guide covering version
+  bumps, CHANGELOG updates, annotated tags, and GitHub Release creation
+
+### Changed
+
+- `repoheart/main.py` — extended to support `run` and `init` subcommands via
+  `argparse` subparsers; legacy flat invocation (`repoheart --event X --config Y`)
+  preserved for backward compatibility with the GitHub Action container
+- `pyproject.toml` — version bumped from `0.3.0` to `0.8.0` to reflect all
+  completed phases (Phases 1–7 shipped without a PyPI release)
+
+### Tests
+
+- `tests/test_cli_init.py` — 6 tests covering file generation, conflict detection,
+  force overwrite, provider/model flags, and version flag regression
+- 543 tests total; ruff clean, mypy strict clean
+
+---
+
 ## [0.7.0] - 2026-08-26
 
 Phase 7 — Documentation Agent & Polish. The final MVP phase: a real
@@ -410,7 +452,8 @@ This project follows [Semantic Versioning](https://semver.org/):
 
 ## Links
 
-[Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/OpenAgentHQ/repoheart/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/OpenAgentHQ/repoheart/compare/v0.4.0...v0.5.0

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "repoheart"
-version = "0.3.0"
+version = "0.8.0"
 description = "The autonomous, event-driven, multi-agent heart of your GitHub repository."
 readme = "README.md"
 requires-python = ">=3.11"
