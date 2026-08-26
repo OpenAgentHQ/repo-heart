@@ -11,12 +11,44 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [0.8.2] - 2026-08-26
 
+### Added
+
+- GitHub Actions per-agent visibility: workflow now uses a `plan` → `agents`
+  (matrix) → `summary` job graph so each agent's pass/fail/skip is visible as
+  its own named job in the Actions sidebar, with a consolidated status table in
+  `$GITHUB_STEP_SUMMARY`
+- `repoheart plan` subcommand — computes per-agent activation for an event and
+  writes `.repoheart/plan.json` without running any agent (used by the workflow's
+  `plan` job to size the matrix)
+- `--agent` flag for `repoheart run` — restrict execution to a single agent
+  name; agents not selected for the event are reported as "skipped" rather than
+  silently omitted
+- `Agent.blocking` attribute (default `True`) — set `False` on agents whose
+  findings are purely informational so their failure doesn't fail the workflow
+- `repoheart/cli/actions_report.py` — builds plan and per-agent result JSON
+  artifacts (`.repoheart/plan.json`, `.repoheart/result-<agent>.json`) consumed
+  by the workflow's summary job
+- Logger `group()`, `error()`, `warning()` methods for GitHub Actions workflow
+  commands (`::group::`, `::error::`, `::warning::`) so a single step's log
+  stays readable in the Actions UI
+- Init CLI workflow template now ships the plan/matrix/summary workflow for
+  new consumers (regression test ensures it stays byte-identical to the repo's
+  own workflow)
+
 ### Fixed
 
 - Corrected OpenCode provider base URL to point to the real Zen API host
 - Fixed Docker smoke test command for `ENTRYPOINT` compatibility
 - Lowercased GHCR image references to fix invalid reference format in Docker
   publish workflow and action metadata
+- Updated `__version__` in `repoheart/__init__.py` from `0.0.0` to `0.8.2`
+
+### Docs
+
+- Expanded README configuration example with full annotated `repoheart.yml`
+  reference covering all agents, scaling, CI behavior, and label options
+- Added `repoheart/__init__.py` version update step to Release Workflow in
+  `AGENTS.md`
 
 ---
 
