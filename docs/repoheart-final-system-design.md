@@ -116,9 +116,11 @@ RepoHeart Runtime  (all business logic below this line)
           → semantic (cached embeddings, optional)
           → dependency expansion → rank → dedup → truncate to budget
      c. Agent reasons over BOUNDED context (LLM sees tool output + top chunks)
-     d. Agent returns AgentResult (findings + proposed actions)
+     d. Agent returns AgentResult (review_comments | issue_comments | proposed_actions)
      e. Safety Gate authorizes each action → ALLOW | ESCALATE | DENY
-     f. Execute allowed actions / escalate the rest to human review
+     f. Execute allowed actions / escalate the rest to human review:
+          - Issue agents: issue_flow.format_issue_comment() → POST_COMMENT (with marker)
+          - PR agents: pr_flow.consolidate() → CREATE_PR_REVIEW (inline + body)
      g. Update cache with content-hashed results
 8. Idempotency write (marker recorded as last step of successful run)
 9. Exit — all state lives back in GitHub
@@ -142,8 +144,25 @@ class Agent(ABC):
     def run(self, context: AgentContext) -> AgentResult: ...
 
 @dataclass
+class ReviewComment:
+    """Structured code-level finding for PR agents (file/line/severity/suggestion).
+    Agents produce these; the orchestrator delivers them via CREATE_PR_REVIEW."""
+    title: str; body: str; severity: str
+    file: str | None; line: int | None
+    suggestion: str | None; category: str | None; source: str
+
+@dataclass
+class IssueComment:
+    """Structured issue-level finding for issue agents.
+    Agents produce these; the orchestrator formats and posts them with an idempotency marker."""
+    title: str; body: str; severity: str
+    references: list[str]; source: str
+
+@dataclass
 class AgentResult:
-    findings: list[Finding]
+    findings: list[Finding]              # status/error messages only
+    review_comments: list[ReviewComment] # PR agent output
+    issue_comments: list[IssueComment]   # Issue agent output
     proposed_actions: list[ProposedAction]
     confidence: float
     needs_human_review: bool
@@ -302,11 +321,27 @@ The "no database" rule holds for **correctness**. The cache is purely cost/laten
 ### 19. Permission & Risk Model
 
 ```text
-SAFE     → read repo, add label, post comment
+SAFE     → read repo, add label, post comment, create PR review
 LOW      → create branch
 MEDIUM   → modify code, push branch
 HIGH     → merge PR, delete branch, force operations
 ```
+
+**ActionKind table:**
+
+| ActionKind | Risk | Notes |
+|---|---|---|
+| `READ_REPO` | SAFE | |
+| `ADD_LABEL` | SAFE | |
+| `REMOVE_LABEL` | SAFE | |
+| `POST_COMMENT` | SAFE | Used by issue flow; not by agents directly |
+| `CREATE_PR_REVIEW` | SAFE | Posts consolidated PR review with optional inline comments |
+| `CREATE_BRANCH` | LOW | |
+| `MODIFY_CODE` | MEDIUM | |
+| `COMMIT` | MEDIUM | |
+| `PUSH_BRANCH` | MEDIUM | |
+| `DELETE_BRANCH` | HIGH | |
+| *(no MERGE)* | — | Deliberately absent from MVP enum |
 
 Enforced in four layers: static per-agent ceiling → config gating (can only restrict) → per-action runtime gate → escalation path.
 

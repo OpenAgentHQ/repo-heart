@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 
-from repoheart.agents.base import Agent, AgentResult, Finding, ProposedAction
+from repoheart.agents.base import Agent, AgentResult, Finding, IssueComment, ProposedAction
 from repoheart.orchestrator.agent_context import AgentContext
 from repoheart.providers.base import CompletionRequest, Message
 from repoheart.safety.policy import ActionKind, RiskLevel
@@ -24,28 +24,6 @@ Return ONLY valid JSON in this exact format:
 
 Only include issues that are genuinely duplicates. An empty array is correct \
 if there are no duplicates.\
-"""
-
-_DUPLICATE_COMMENT = """\
-<!-- repoheart:duplicate-check -->
-**Possible Duplicate Detected**
-
-This issue may be a duplicate of:
-{links}
-
-Please review and close if confirmed.
-
-_Automated duplicate detection by [RepoHeart](https://github.com/OpenAgentHQ/repo-heart)._\
-"""
-
-_RELATED_COMMENT = """\
-<!-- repoheart:duplicate-check -->
-**Possibly Related Issues**
-
-These existing issues may be related:
-{links}
-
-_Automated duplicate detection by [RepoHeart](https://github.com/OpenAgentHQ/repo-heart)._\
 """
 
 
@@ -115,9 +93,9 @@ class DuplicateDetectionAgent(Agent):
         medium = [d for d in duplicates if d.get("confidence") == "medium"]
 
         proposed_actions: list[ProposedAction] = []
+        issue_comments: list[IssueComment] = []
 
         if high:
-            links = "\n".join(f"- #{d['number']}: {d.get('reason', '')}" for d in high)
             proposed_actions.append(
                 ProposedAction(
                     kind=ActionKind.ADD_LABEL,
@@ -125,25 +103,35 @@ class DuplicateDetectionAgent(Agent):
                     reason=f"High-confidence duplicate of #{high[0]['number']}",
                 )
             )
-            proposed_actions.append(
-                ProposedAction(
-                    kind=ActionKind.POST_COMMENT,
-                    payload={"body": _DUPLICATE_COMMENT.format(links=links)},
-                    reason="Notify submitter of detected duplicate",
+            for d in high:
+                issue_comments.append(
+                    IssueComment(
+                        title="Possible duplicate",
+                        body=(
+                            f"This issue appears to duplicate #{d['number']} "
+                            f"because {d.get('reason', 'they describe the same problem')}."
+                        ),
+                        severity="high",
+                        references=[f"#{d['number']}"],
+                    )
                 )
-            )
         elif medium:
-            links = "\n".join(f"- #{d['number']}: {d.get('reason', '')}" for d in medium)
-            proposed_actions.append(
-                ProposedAction(
-                    kind=ActionKind.POST_COMMENT,
-                    payload={"body": _RELATED_COMMENT.format(links=links)},
-                    reason="Notify submitter of possibly related issues",
+            for d in medium:
+                issue_comments.append(
+                    IssueComment(
+                        title="Possibly related issue",
+                        body=(
+                            f"This issue may be related to #{d['number']}: "
+                            f"{d.get('reason', '')}."
+                        ),
+                        severity="warning",
+                        references=[f"#{d['number']}"],
+                    )
                 )
-            )
 
         detail = f"{len(high)} high-confidence, {len(medium)} medium-confidence duplicates found"
         return AgentResult(
             findings=[Finding(summary="Duplicate detection complete", detail=detail)],
+            issue_comments=issue_comments,
             proposed_actions=proposed_actions,
         )

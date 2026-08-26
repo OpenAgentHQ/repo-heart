@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 
-from repoheart.agents.base import Agent, AgentResult, Finding, ProposedAction
+from repoheart.agents.base import Agent, AgentResult, Finding, IssueComment, ProposedAction
 from repoheart.orchestrator.agent_context import AgentContext
 from repoheart.providers.base import CompletionRequest, Message
 from repoheart.safety.policy import ActionKind, RiskLevel
@@ -21,20 +21,6 @@ Return ONLY valid JSON in this exact format:
   "pr_number": <int or null>,
   "explanation": "<brief explanation>"
 }\
-"""
-
-_RESOLUTION_COMMENT = """\
-<!-- repoheart:resolution-check -->
-**Possible Resolution Found**
-
-This issue may already be fixed by PR #{pr_number}.
-
-{explanation}
-
-If this resolves your issue, please close it. If the problem persists, let us \
-know what's still happening.
-
-_Automated resolution check by [RepoHeart](https://github.com/OpenAgentHQ/repo-heart)._\
 """
 
 
@@ -117,18 +103,21 @@ class IssueResolutionAgent(Agent):
         resolved_pr = parsed.get("pr_number") or pr_number
 
         proposed_actions: list[ProposedAction] = []
+        issue_comments: list[IssueComment] = []
 
         if resolved and confidence in ("high", "medium"):
-            proposed_actions.append(
-                ProposedAction(
-                    kind=ActionKind.POST_COMMENT,
-                    payload={
-                        "body": _RESOLUTION_COMMENT.format(
-                            pr_number=resolved_pr,
-                            explanation=explanation,
-                        )
-                    },
-                    reason=f"Issue may be resolved by PR #{resolved_pr} ({confidence} confidence)",
+            severity = "high" if confidence == "high" else "warning"
+            issue_comments.append(
+                IssueComment(
+                    title="Possibly already fixed",
+                    body=(
+                        f"PR #{resolved_pr} may have resolved this issue.\n\n"
+                        f"{explanation}\n\n"
+                        "If this resolves your issue, please close it. "
+                        "If the problem persists, let us know what's still happening."
+                    ),
+                    severity=severity,
+                    references=[f"#{resolved_pr}"],
                 )
             )
 
@@ -145,5 +134,6 @@ class IssueResolutionAgent(Agent):
         summary = f"Resolution: {status} ({confidence} confidence)"
         return AgentResult(
             findings=[Finding(summary=summary, detail=explanation)],
+            issue_comments=issue_comments,
             proposed_actions=proposed_actions,
         )

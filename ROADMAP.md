@@ -79,24 +79,28 @@ Goal: one complete, genuinely useful flow, end to end.
 
 ---
 
-## Phase 4 — PR Intelligence ☐
+## Phase 4 — PR Intelligence ☑
 
 Goal: useful PR reviews, not noisy comments.
 
-- ☐ `agents/pr_review.py` — correctness + review synthesis over diff + dependents
-- ☐ `agents/code_quality.py` — run linters/type-checkers on changed paths, feed tool output
-- ☐ `agents/security.py` — secret scan + dependency audit on the diff
-- ☐ `agents/test_agent.py` — test-impact mapping for changed modules
-- ☐ Orchestrator sequencing for the PR flow
-- ☐ Consolidated single review output (not one comment per agent)
+- ☑ `agents/pr_review.py` — correctness + review synthesis over diff + dependents
+- ☑ `agents/code_quality.py` — run linters/type-checkers on changed paths, feed tool output
+- ☑ `agents/security.py` — secret scan + dependency audit on the diff
+- ☑ `agents/test_agent.py` — test-impact mapping for changed modules
+- ☑ Orchestrator sequencing for the PR flow
+- ☑ Consolidated single review output (not one comment per agent)
 
-**Exit criteria:** open a PR → one coherent review covering quality/security/tests, scoped to the diff, with actionable findings.
+**Exit criteria:** open a PR → one coherent review covering quality/security/tests, scoped to the diff, with actionable findings. ✅ Verified — 334 tests passing, ruff clean, mypy strict clean on 48 source files.
+
+Unified agent output architecture: `ReviewComment` (PR agents) + `IssueComment` (issue agents). Inline GitHub PR review comments with file/line mapping where diff permits. Issue agents no longer self-post; the orchestrator delivers all comments via `issue_flow.format_issue_comment()` with idempotency markers.
 
 ---
 
 ## Phase 5 — Large-Repo Scaling ☐
 
 Goal: works on LangChain/opencode-class repos without timing out or blowing budgets.
+
+Note: the `ReviewComment` and `IssueComment` output types introduced in Phase 4 make Phase 5 agents straightforward to add — new agents follow the same typed output conventions without reinventing delivery.
 
 - ☐ `repo_access/` — event-scoped sparse/shallow/partial checkout + merge-base
 - ☐ `retrieval/structural.py` — tree-sitter symbol graph

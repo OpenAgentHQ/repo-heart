@@ -8,20 +8,24 @@ registry exclusively — never imports agent classes directly.
 from __future__ import annotations
 
 from repoheart.agents.base import Agent
+from repoheart.agents.code_quality import CodeQualityAgent
 from repoheart.agents.duplicate_detection import DuplicateDetectionAgent
 from repoheart.agents.issue_resolution import IssueResolutionAgent
 from repoheart.agents.issue_triage import IssueTriageAgent
 from repoheart.agents.noop import NoOpAgent
+from repoheart.agents.pr_review import PRReviewAgent
+from repoheart.agents.security import SecurityAgent
+from repoheart.agents.test_agent import TestCoverageAgent
 
 AGENT_REGISTRY: dict[str, type[Agent]] = {
     "issue_triage": IssueTriageAgent,
     "duplicate_detection": DuplicateDetectionAgent,
     "issue_resolution": IssueResolutionAgent,
-    "pr_review": NoOpAgent,
-    "code_quality": NoOpAgent,
-    "security": NoOpAgent,
+    "pr_review": PRReviewAgent,
+    "code_quality": CodeQualityAgent,
+    "security": SecurityAgent,
     "ci_repair": NoOpAgent,
     "conflict_resolution": NoOpAgent,
-    "test": NoOpAgent,
+    "test": TestCoverageAgent,
     "documentation": NoOpAgent,
 }

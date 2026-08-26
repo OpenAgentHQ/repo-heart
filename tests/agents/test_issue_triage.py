@@ -61,13 +61,15 @@ def _make_context(
     )
 
 
-def test_triage_proposes_label_and_comment() -> None:
+def test_triage_proposes_label_and_issue_comment() -> None:
     ctx = _make_context(MockProvider(default_response=CannedResponse(_VALID_RESPONSE)))
     result = IssueTriageAgent().run(ctx)
 
     kinds = {a.kind for a in result.proposed_actions}
     assert ActionKind.ADD_LABEL in kinds
-    assert ActionKind.POST_COMMENT in kinds
+    assert ActionKind.POST_COMMENT not in kinds
+    assert result.issue_comments
+    assert result.issue_comments[0].title == "Issue Triage"
 
 
 def test_triage_labels_are_filtered_to_available() -> None:
@@ -99,15 +101,16 @@ def test_triage_no_labels_skips_label_action() -> None:
 
     kinds = {a.kind for a in result.proposed_actions}
     assert ActionKind.ADD_LABEL not in kinds
-    assert ActionKind.POST_COMMENT in kinds
+    assert result.issue_comments
 
 
-def test_triage_comment_contains_idempotency_marker() -> None:
+def test_triage_issue_comment_body_contains_type_and_priority() -> None:
     ctx = _make_context(MockProvider(default_response=CannedResponse(_VALID_RESPONSE)))
     result = IssueTriageAgent().run(ctx)
 
-    comment = next(a for a in result.proposed_actions if a.kind == ActionKind.POST_COMMENT)
-    assert "<!-- repoheart:triage -->" in comment.payload["body"]
+    ic = result.issue_comments[0]
+    assert "bug" in ic.body.lower() or "bug" in ic.body
+    assert "high" in ic.body
 
 
 def test_triage_malformed_json_returns_no_actions() -> None:
@@ -145,3 +148,9 @@ def test_triage_calls_provider_once() -> None:
     ctx = _make_context(provider)
     IssueTriageAgent().run(ctx)
     assert provider.call_count == 1
+
+
+def test_triage_severity_maps_priority_correctly() -> None:
+    ctx = _make_context(MockProvider(default_response=CannedResponse(_VALID_RESPONSE)))
+    result = IssueTriageAgent().run(ctx)
+    assert result.issue_comments[0].severity == "high"
