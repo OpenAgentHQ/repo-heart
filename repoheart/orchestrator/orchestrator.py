@@ -28,7 +28,9 @@ from repoheart.observability.logger import StructuredLogger
 from repoheart.orchestrator.agent_context import AgentContext
 from repoheart.orchestrator.issue_flow import comment_already_posted, format_issue_comment
 from repoheart.orchestrator.pr_flow import already_reviewed, consolidate
-from repoheart.providers.base import Provider
+from repoheart.providers.base import CompletionRequest, CompletionResponse, Provider
+from repoheart.retrieval.budget import BudgetExceededError, RunBudget
+from repoheart.retrieval.layer import RetrievalLayer, RetrievalQuery
 from repoheart.safety.gate import SafetyGate
 from repoheart.safety.policy import ActionKind, Decision
 
@@ -138,6 +140,40 @@ def _map_tests(changed_files: list[str], repo_root: str) -> dict[str, list[str]]
     return mapping
 
 
+def _extract_terms(pr_data: dict[str, Any] | None, diff: str) -> list[str]:
+    """Extract search terms from PR title and diff for the retrieval layer."""
+    terms: list[str] = []
+    if pr_data:
+        title = str(pr_data.get("title", "")).strip()
+        if title:
+            terms.append(title)
+    for line in diff.splitlines()[:100]:
+        if line.startswith("+") and not line.startswith("+++"):
+            stripped = line[1:].strip()
+            if len(stripped) > 10:
+                terms.append(stripped[:80])
+                break
+    return terms[:3]
+
+
+class _BudgetedProvider(Provider):
+    """Thin wrapper that charges RunBudget on every complete() call."""
+
+    def __init__(self, inner: Provider, budget: RunBudget) -> None:
+        self._inner = inner
+        self._budget = budget
+
+    def complete(self, request: CompletionRequest) -> CompletionResponse:
+        self._budget.charge_llm_call()
+        return self._inner.complete(request)
+
+    def supports_tools(self) -> bool:
+        return self._inner.supports_tools()
+
+    def provider_name(self) -> str:
+        return self._inner.provider_name()
+
+
 @dataclass
 class RunSummary:
     """Aggregate result of a single orchestrator run."""
@@ -162,6 +198,7 @@ class Orchestrator:
         markers: IdempotencyMarkers,
         logger: StructuredLogger,
         provider_factory: Callable[[str], Provider] | None = None,
+        retrieval_layer: RetrievalLayer | None = None,
     ) -> None:
         self._config = config
         self._github = github_client
@@ -170,6 +207,8 @@ class Orchestrator:
         self._markers = markers
         self._logger = logger
         self._provider_factory = provider_factory
+        self._retrieval_layer = retrieval_layer
+        self._run_budget: RunBudget | None = None
 
     def run(self, event: InternalEvent, agent_names: list[str]) -> RunSummary:
         """Execute the pipeline for a routed event.
@@ -188,8 +227,20 @@ class Orchestrator:
         """
         summary = RunSummary(event=event)
         pr_agent_results: dict[str, AgentResult] = {}
+        self._run_budget = RunBudget(limits=self._config.scale.limits)
 
         for agent_name in agent_names:
+            try:
+                self._run_budget.check_runtime()
+            except BudgetExceededError as budget_exc:
+                msg = f"budget ceiling hit before {agent_name}: {budget_exc}"
+                self._logger.log(
+                    event_msg="budget_ceiling_hit",
+                    agent=agent_name,
+                    reason=str(budget_exc),
+                )
+                summary.errors.append(msg)
+                break
             fingerprint = fingerprint_for_event(event, agent_name)
 
             # 1. Idempotency check
@@ -310,7 +361,12 @@ class Orchestrator:
 
         provider: Provider | None = None
         if self._provider_factory is not None:
-            provider = self._provider_factory(agent_name)
+            base_provider = self._provider_factory(agent_name)
+            provider = (
+                _BudgetedProvider(base_provider, self._run_budget)
+                if self._run_budget is not None
+                else base_provider
+            )
 
         if not self._github._token:
             return AgentContext(
@@ -391,6 +447,30 @@ class Orchestrator:
                 error=str(exc),
             )
 
+        # Phase 5: retrieval (PR agents with changed files + configured retrieval layer)
+        from repoheart.retrieval.layer import RetrievalContext  # local to avoid circular
+        retrieval_context: RetrievalContext | None = None
+        if changed_files and self._retrieval_layer is not None and self._run_budget is not None:
+            query = RetrievalQuery(
+                terms=_extract_terms(pr_data, diff),
+                anchor_files=changed_files[:50],
+                max_chars=20_000,
+            )
+            try:
+                retrieval_context = self._retrieval_layer.retrieve(query, self._run_budget)
+                self._logger.log(
+                    event_msg="retrieval_complete",
+                    agent=agent_name,
+                    chunks=len(retrieval_context.chunks),
+                    chars=retrieval_context.budget_used_chars,
+                )
+            except BudgetExceededError as exc:
+                self._logger.log(
+                    event_msg="retrieval_budget_exceeded",
+                    agent=agent_name,
+                    error=str(exc),
+                )
+
         return AgentContext(
             event=event,
             config=self._config,
@@ -406,6 +486,7 @@ class Orchestrator:
             linter_output=linter_output,
             secret_scan_output=secret_scan_output,
             test_mapping=test_mapping,
+            retrieval_context=retrieval_context,
         )
 
     def _deliver_issue_comments(

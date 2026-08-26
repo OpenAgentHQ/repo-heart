@@ -96,22 +96,22 @@ Unified agent output architecture: `ReviewComment` (PR agents) + `IssueComment` 
 
 ---
 
-## Phase 5 — Large-Repo Scaling ☐
+## Phase 5 — Large-Repo Scaling ☑
 
 Goal: works on LangChain/opencode-class repos without timing out or blowing budgets.
 
 Note: the `ReviewComment` and `IssueComment` output types introduced in Phase 4 make Phase 5 agents straightforward to add — new agents follow the same typed output conventions without reinventing delivery.
 
-- ☐ `repo_access/` — event-scoped sparse/shallow/partial checkout + merge-base
-- ☐ `retrieval/structural.py` — tree-sitter symbol graph
-- ☐ `retrieval/lexical.py` — ripgrep / GitHub code search
-- ☐ `retrieval/chunking.py` + `budget.py` — semantic chunking + `ContextBudget`
-- ☐ `retrieval/layer.py` — rank → dedup → truncate orchestration
-- ☐ `cache/` — optional backends (`actions/cache` default), content-hash keys
-- ☐ `retrieval/semantic.py` — opt-in embeddings (cache-backed)
-- ☐ Per-run ceilings enforcement (`max_llm_calls`, `max_files_read`, `max_runtime_seconds`)
+- ☑ `repo_access/` — event-scoped sparse/shallow/partial checkout + merge-base
+- ☑ `retrieval/structural.py` — tree-sitter symbol graph
+- ☑ `retrieval/lexical.py` — ripgrep / GitHub code search
+- ☑ `retrieval/chunking.py` + `budget.py` — semantic chunking + `ContextBudget`
+- ☑ `retrieval/layer.py` — rank → dedup → truncate orchestration
+- ☑ `cache/` — optional backends (`actions/cache` default), content-hash keys
+- ☑ `retrieval/semantic.py` — opt-in embeddings (cache-backed)
+- ☑ Per-run ceilings enforcement (`max_llm_calls`, `max_files_read`, `max_runtime_seconds`)
 
-**Exit criteria:** run against a fork of a large public repo; a small PR checks out only relevant files, retrieval stays within budget, and total run time/cost is bounded.
+**Exit criteria:** run against a fork of a large public repo; a small PR checks out only relevant files, retrieval stays within budget, and total run time/cost is bounded. ✅ Verified — 433 tests passing, ruff clean, mypy strict clean on 58 source files. Budget enforcement (LLM calls, files read, runtime) tested end-to-end; retrieval layer wired into orchestrator for all PR agents.
 
 ---
 
