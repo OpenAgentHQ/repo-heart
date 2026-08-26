@@ -12,6 +12,8 @@ ISSUE_AGENT_MARKERS: dict[str, str] = {
     "issue_triage": "<!-- repoheart:triage -->",
     "duplicate_detection": "<!-- repoheart:duplicate-check -->",
     "issue_resolution": "<!-- repoheart:resolution-check -->",
+    "ci_repair": "<!-- repoheart:ci-repair -->",
+    "conflict_resolution": "<!-- repoheart:conflict-resolution -->",
 }
 
 _SEVERITY_BADGES: dict[str, str] = {
