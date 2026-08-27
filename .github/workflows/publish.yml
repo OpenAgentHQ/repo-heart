@@ -6,6 +6,12 @@ on:
       - "v*.*.*"
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Tag or branch to publish (e.g. v0.8.2)"
+        required: true
+        default: "main"
 
 jobs:
   build:
