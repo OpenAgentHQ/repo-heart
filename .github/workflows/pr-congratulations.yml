@@ -40,7 +40,7 @@ jobs:
       # ─────────────────────────────────────────────────────────────────────
       - name: Detect first contribution and build comment
         id: build-comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             // ── Extract PR metadata ──────────────────────────────────────
@@ -131,7 +131,7 @@ jobs:
       # ─────────────────────────────────────────────────────────────────────
       - name: Post comment on PR
         if: steps.build-comment.outputs.action_taken == 'commented'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const commentBody = `${{ steps.build-comment.outputs.comment_body }}`;
@@ -151,7 +151,7 @@ jobs:
       # ─────────────────────────────────────────────────────────────────────
       - name: Log workflow execution
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const actionTaken = '${{ steps.build-comment.outputs.action_taken }}';
