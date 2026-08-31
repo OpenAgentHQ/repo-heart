@@ -94,7 +94,7 @@ jobs:
           PY
 
       - name: Upload plan artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: repoheart-plan
           path: .repoheart/plan.json
@@ -141,7 +141,7 @@ jobs:
 
       - name: Upload agent result
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: repoheart-result-${{ matrix.agent.id }}
           path: .repoheart/result-${{ matrix.agent.id }}.json
