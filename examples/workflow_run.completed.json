@@ -1,0 +1,52 @@
+{
+  "action": "completed",
+  "workflow_run": {
+    "id": 8123456789,
+    "name": "CI",
+    "head_branch": "feat/graceful-config-error",
+    "head_sha": "0123456789abcdef0123456789abcdef01234567",
+    "run_number": 42,
+    "event": "push",
+    "status": "completed",
+    "conclusion": "failure",
+    "workflow_id": 11223344,
+    "url": "https://api.example.invalid/repos/example-org/example-repo/actions/runs/8123456789",
+    "html_url": "https://github.example.invalid/example-org/example-repo/actions/runs/8123456789",
+    "pull_requests": [
+      {
+        "number": 7,
+        "head": {
+          "ref": "feat/graceful-config-error",
+          "sha": "0123456789abcdef0123456789abcdef01234567"
+        },
+        "base": {
+          "ref": "main",
+          "sha": "fedcba9876543210fedcba9876543210fedcba98"
+        }
+      }
+    ],
+    "created_at": "2026-08-25T11:40:00Z",
+    "updated_at": "2026-08-25T11:47:23Z",
+    "run_started_at": "2026-08-25T11:40:05Z",
+    "jobs_url": "https://api.example.invalid/repos/example-org/example-repo/actions/runs/8123456789/jobs",
+    "logs_url": "https://api.example.invalid/repos/example-org/example-repo/actions/runs/8123456789/logs",
+    "check_suite_url": "https://api.example.invalid/repos/example-org/example-repo/check-suites/99887766",
+    "actor": { "login": "example-contributor" },
+    "triggering_actor": { "login": "example-contributor" },
+    "repository": {
+      "full_name": "example-org/example-repo",
+      "default_branch": "main"
+    },
+    "head_commit": {
+      "id": "0123456789abcdef0123456789abcdef01234567",
+      "message": "Handle missing configuration",
+      "author": { "name": "Example Contributor" }
+    }
+  },
+  "repository": {
+    "full_name": "example-org/example-repo",
+    "default_branch": "main",
+    "private": false
+  },
+  "sender": { "login": "example-contributor" }
+}
